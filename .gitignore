@@ -1,0 +1,15 @@
+# ── Configuración de base de datos (contiene credenciales) ──
+config/database.php
+
+# ── Imágenes subidas por usuarios ────────────────────────────
+public/uploads/
+
+# ── Archivos de sistema y editores ───────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+
+# ── IDEs ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp

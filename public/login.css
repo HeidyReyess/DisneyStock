@@ -1,0 +1,331 @@
+/* ============================================================
+   GestioPyme — Login CSS  v3.0  — Tema morado/azul
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --primary:       #4A1D96;
+    --primary-light: #7C3AED;
+    --primary-ultra: #EDE9FE;
+    --accent:        #3B82F6;
+    --accent-dark:   #2563EB;
+    --bg-main:       #F5F3FF;
+    --bg-white:      #FFFFFF;
+    --text-dark:     #1E1B4B;
+    --text-muted:    #6B7280;
+    --border:        #DDD6FE;
+    --input-bg:      #FAF9FF;
+    --shadow-sm:     0 2px 10px rgba(74, 29, 150, 0.07);
+    --shadow-md:     0 10px 30px rgba(74, 29, 150, 0.12);
+    --shadow-lg:     0 20px 40px rgba(74, 29, 150, 0.20);
+    --radius-sm:     10px;
+    --radius-md:     16px;
+    --radius-lg:     24px;
+    --transition:    all 0.3s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-main);
+    min-height: 100vh;
+    display: flex;
+    color: var(--text-dark);
+}
+
+/* ── Layout dividido ── */
+.login-container {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* ── Panel izquierdo (Hero) ── */
+.login-hero {
+    flex: 1;
+    position: relative;
+    background: linear-gradient(135deg, #1E1B4B 0%, #4A1D96 45%, #7C3AED 75%, #3B82F6 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 60px;
+    color: var(--bg-white);
+    overflow: hidden;
+}
+
+/* Patrón decorativo de fondo */
+.login-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.3) 0%, transparent 50%);
+}
+
+/* Círculo decorativo */
+.login-hero::after {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.06);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 10;
+    max-width: 500px;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    color: #93C5FD;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 28px;
+    letter-spacing: 0.5px;
+}
+
+.hero-content h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(2.2rem, 3.5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 20px;
+}
+
+.hero-content h2 span { color: #93C5FD; }
+
+.hero-content p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 32px;
+}
+
+.hero-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hero-features li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.hero-features li i {
+    color: #93C5FD;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/* ── Panel derecho (Formulario) ── */
+.login-form-wrapper {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 40px;
+    background: var(--bg-white);
+    box-shadow: -10px 0 40px rgba(74, 29, 150, 0.08);
+    z-index: 5;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* ── Logo del formulario ── */
+.login-logo {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--primary-light), var(--accent));
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.6rem;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
+}
+
+/* ── Encabezado ── */
+.login-header { margin-bottom: 36px; }
+
+.login-header h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.login-header p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* ── Campos ── */
+.form-group { margin-bottom: 22px; }
+
+.form-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+}
+
+.input-wrap { position: relative; }
+
+.input-wrap > i:first-child {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 1rem;
+    pointer-events: none;
+    transition: var(--transition);
+}
+
+.input-wrap input {
+    width: 100%;
+    padding: 13px 48px 13px 46px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    color: var(--text-dark);
+    outline: none;
+    transition: var(--transition);
+}
+
+.input-wrap input:focus {
+    border-color: var(--primary-light);
+    background: var(--bg-white);
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+}
+
+.input-wrap input::placeholder { color: #C4B5FD; }
+
+/* Botón ojo contraseña */
+.toggle-password {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 1rem;
+    padding: 4px;
+    transition: var(--transition);
+}
+.toggle-password:hover { color: var(--primary-light); }
+
+/* ── Botón principal ── */
+.btn-ingresar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent) 100%);
+    color: var(--bg-white);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 15px;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 8px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+    letter-spacing: 0.3px;
+}
+
+.btn-ingresar:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* ── Enlace a registro ── */
+.btn-registro-wrap {
+    text-align: center;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+}
+
+.btn-registro-wrap span {
+    display: block;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+}
+
+.btn-registro {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--primary-light);
+    border: 1.5px solid var(--primary-light);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+}
+
+.btn-registro:hover {
+    background: var(--primary-ultra);
+    border-color: var(--accent);
+    color: var(--primary);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .login-hero { display: none; }
+
+    .login-form-wrapper {
+        max-width: 100%;
+        padding: 32px 24px;
+    }
+
+    .login-card {
+        background: var(--bg-white);
+        padding: 40px 28px;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+    }
+}
