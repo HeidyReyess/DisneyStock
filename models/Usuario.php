@@ -2,34 +2,12 @@
 // ============================================================
 //  DisneyStock — Modelo de Usuario
 //  Archivo: models/Usuario.php
+//  Tablas: Usuario, Administrador, Empleado
 //
-//  RESPONSABILIDAD:
-//  Operaciones sobre usuarios, administradores y empleados.
-//  El sistema usa tres tablas relacionadas: Usuario (datos base),
-//  Administrador (rol admin) y Empleado (rol empleado).
-//
-//  MÉTODOS DISPONIBLES:
-//  - obtenerPorUsuario($usuario)
-//      → Busca usuario activo por nombre de usuario para el login.
-//        Hace JOIN con Administrador y Empleado para determinar el rol.
-//        Retorna array con id, nombre, usuario, password_hash, rol,
-//        id_administrador e id_empleado.
-//  - existeUsuario($usuario)
-//      → Verifica si el nombre de usuario ya está en uso.
-//        Usado en registro y creación de usuarios.
-//  - registrar($datos)
-//      → TRANSACCIÓN: inserta en Usuario y luego en Administrador
-//        o Empleado según el rol. Retorna true o string de error.
-//  - obtenerTodos()
-//      → Lista todos los usuarios con su rol determinado por JOIN.
-//        Usado en la vista de gestión de usuarios.
-//  - actualizar($id_usuario, $datos)
-//      → Actualiza nombre y usuario. Si viene 'password_hash'
-//        en $datos, también actualiza la contraseña.
-//  - cambiarEstado($id_usuario, $activo)
-//      → Activa (1) o desactiva (0) un usuario.
-//  - obtenerPorId($id)
-//      → Busca usuario por ID. Usado en toggle de estado.
+//  El sistema usa tres tablas relacionadas:
+//  Usuario (datos base de autenticacion)
+//  Administrador (rol admin, apunta a Usuario)
+//  Empleado (rol empleado, apunta a Usuario)
 // ============================================================
 
 class Usuario
@@ -41,7 +19,9 @@ class Usuario
         $this->conn = $db;
     }
 
-    // ── Obtener usuario activo por nombre de usuario (login) ─
+    // Busca usuario activo por nombre de usuario para el proceso de login
+    // Hace JOIN con Administrador y Empleado para saber el rol
+    // COALESCE en el CASE para manejar usuarios que no esten en ninguna tabla de rol
     public function obtenerPorUsuario(string $usuario): array|false
     {
         $stmt = $this->conn->prepare(
@@ -67,7 +47,8 @@ class Usuario
         return $stmt->fetch();
     }
 
-    // ── Verificar si un nombre de usuario ya existe ───────────
+    // Verifica si el nombre de usuario ya esta en uso
+    // Llamado antes de registrar o crear para evitar duplicados
     public function existeUsuario(string $usuario): bool
     {
         $stmt = $this->conn->prepare(
@@ -77,25 +58,28 @@ class Usuario
         return $stmt->rowCount() > 0;
     }
 
-    // ── Registrar nuevo usuario + rol ─────────────────────────
+    // Crea el usuario en dos pasos dentro de una transaccion:
+    // 1. Inserta en Usuario con nombre, usuario y contrasena hasheada
+    // 2. Inserta en Administrador o Empleado segun el rol
+    // Si algo falla hace rollBack y retorna el mensaje de error
     public function registrar(array $datos): bool|string
     {
         try {
             $this->conn->beginTransaction();
 
-            // Insertar en Usuario
+            // Paso 1: insertar datos base en la tabla Usuario
             $stmt = $this->conn->prepare(
                 "INSERT INTO Usuario (nombre, usuario, contrasena)
                  VALUES (:nombre, :usuario, :contrasena)"
             );
             $stmt->execute([
-                ':nombre'    => $datos['nombre'],
-                ':usuario'   => $datos['usuario'],
-                ':contrasena' => $datos['password_hash'],
+                ':nombre'     => $datos['nombre'],
+                ':usuario'    => $datos['usuario'],
+                ':contrasena' => $datos['password_hash'], // ya viene hasheada del controlador
             ]);
             $id_usuario = (int)$this->conn->lastInsertId();
 
-            // Insertar en tabla de rol
+            // Paso 2: insertar en la tabla de rol correspondiente
             if (($datos['rol'] ?? 'empleado') === 'admin') {
                 $this->conn->prepare(
                     "INSERT INTO Administrador (id_usuario) VALUES (:id)"
@@ -116,7 +100,8 @@ class Usuario
         }
     }
 
-    // ── Obtener todos los usuarios con su rol ─────────────────
+    // Lista todos los usuarios con su rol calculado por JOIN
+    // Ordenados por fecha de creacion descendente (mas nuevos primero)
     public function obtenerTodos(): array
     {
         $stmt = $this->conn->query(
@@ -139,11 +124,14 @@ class Usuario
         return $stmt->fetchAll();
     }
 
-    // ── Actualizar datos de usuario ───────────────────────────
+    // Actualiza nombre y usuario — la contrasena solo si viene en $datos
+    // Esto permite editar sin tocar la clave si el admin no escribio una nueva
     public function actualizar(int $id_usuario, array $datos): bool|string
     {
         try {
             $sql = "UPDATE Usuario SET nombre = :nombre, usuario = :usuario, updated_at = NOW()";
+
+            // Agregar campo de contrasena al UPDATE solo si se envio una nueva
             if (!empty($datos['password_hash'])) {
                 $sql .= ", contrasena = :contrasena";
             }
@@ -167,7 +155,8 @@ class Usuario
         }
     }
 
-    // ── Activar / desactivar ──────────────────────────────────
+    // Activa (1) o desactiva (0) un usuario por ID
+    // El controlador evita que un admin se desactive a si mismo
     public function cambiarEstado(int $id_usuario, int $activo): void
     {
         $this->conn->prepare(
@@ -175,7 +164,7 @@ class Usuario
         )->execute([':activo' => $activo, ':id' => $id_usuario]);
     }
 
-    // ── Obtener usuario por ID ────────────────────────────────
+    // Busca un usuario por ID — usado para leer el estado actual antes del toggle
     public function obtenerPorId(int $id): array|false
     {
         $stmt = $this->conn->prepare(

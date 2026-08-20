@@ -2,35 +2,21 @@
 // ============================================================
 //  DisneyStock — Modelo Categoria
 //  Archivo: models/Categoria.php
-//
-//  RESPONSABILIDAD:
-//  Operaciones sobre categorías de productos.
-//
-//  MÉTODOS DISPONIBLES:
-//  - obtenerTodas()
-//      → Lista todas las categorías ordenadas por nombre.
-//        Usado en selects de productos y filtros.
-//  - existePorNombre($nombre)
-//      → Verifica si ya existe una categoría con ese nombre.
-//        Usado para evitar duplicados al crear.
-//  - crear($nombre, $descripcion)
-//      → Inserta una nueva categoría.
-//  - tieneProductos($id)
-//      → Verifica si la categoría tiene productos asociados.
-//        Usado para bloquear eliminación si aplica.
-//  - eliminar($id)
-//      → Borra la categoría por ID.
+//  Tabla: Categoria
 // ============================================================
 
 class Categoria
 {
     private PDO $conn;
 
+    // Recibe la conexion PDO desde el controlador
     public function __construct(PDO $db)
     {
         $this->conn = $db;
     }
 
+    // Retorna todas las categorias ordenadas A-Z
+    // Usado en los selects de productos y en el modal de categorias
     public function obtenerTodas(): array
     {
         return $this->conn
@@ -38,6 +24,8 @@ class Categoria
             ->fetchAll();
     }
 
+    // Verifica si ya existe una categoria con ese nombre exacto
+    // Evita duplicados antes de insertar
     public function existePorNombre(string $nombre): bool
     {
         $stmt = $this->conn->prepare(
@@ -47,6 +35,7 @@ class Categoria
         return $stmt->rowCount() > 0;
     }
 
+    // Inserta una nueva categoria con nombre y descripcion opcional
     public function crear(string $nombre, ?string $descripcion = null): void
     {
         $this->conn->prepare(
@@ -54,6 +43,8 @@ class Categoria
         )->execute([':n' => $nombre, ':d' => $descripcion]);
     }
 
+    // Verifica si la categoria tiene productos antes de eliminar
+    // Si retorna true el controlador bloquea la eliminacion
     public function tieneProductos(int $id): bool
     {
         $stmt = $this->conn->prepare(
@@ -63,6 +54,8 @@ class Categoria
         return (int)$stmt->fetchColumn() > 0;
     }
 
+    // Elimina la categoria por ID
+    // Solo se llama si tieneProductos() retorna false
     public function eliminar(int $id): void
     {
         $this->conn->prepare(

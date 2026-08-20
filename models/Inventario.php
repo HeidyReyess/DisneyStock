@@ -2,31 +2,7 @@
 // ============================================================
 //  DisneyStock — Modelo de Inventario
 //  Archivo: models/Inventario.php
-//
-//  RESPONSABILIDAD:
-//  Operaciones sobre movimientos de inventario y alertas de stock.
-//  Es el único lugar donde se debe gestionar la lógica de alertas
-//  para movimientos manuales.
-//
-//  MÉTODOS DISPONIBLES:
-//  - ultimosMovimientos($limite)
-//      → Últimos N movimientos con datos de producto y usuario.
-//        El usuario puede ser admin o empleado (via venta).
-//        Usado en el panel lateral de la vista de inventario.
-//  - registrar($id_producto, $tipo, $cantidad, $descripcion, $id_adm)
-//      → Registra el movimiento y actualiza stock_actual:
-//          · entrada → stock_actual + cantidad
-//          · salida  → stock_actual - cantidad (valida disponibilidad)
-//          · ajuste  → stock_actual = cantidad
-//        Gestión de alertas automática:
-//          · Si stock queda bajo mínimo → crea Alerta si no existe una.
-//          · Si entrada/ajuste → resuelve alertas activas del producto.
-//        Retorna ['ok'=>bool, 'error'=>string|null].
-//  - alertasActivas($limite)
-//      → Alertas con estado='activa' ordenadas por stock ascendente.
-//        Usado en el panel de alertas del dashboard.
-//  - reporteMovimientos($desde, $hasta)
-//      → Movimientos del período para la vista de reportes.
+//  Tablas: Movimiento_Inventario, Producto, Alerta
 // ============================================================
 
 class Inventario
@@ -38,7 +14,9 @@ class Inventario
         $this->conn = $db;
     }
 
-    // ── Últimos N movimientos ─────────────────────────────────
+    // Retorna los ultimos N movimientos con producto y usuario
+    // Hace JOIN doble para obtener el usuario: puede ser admin directo
+    // o empleado via la venta asociada al movimiento
     public function ultimosMovimientos(int $limite = 10): array
     {
         $stmt = $this->conn->prepare(
@@ -56,55 +34,70 @@ class Inventario
              ORDER BY m.fecha DESC
              LIMIT :lim"
         );
+        // bindValue necesario para pasar entero a LIMIT — PDO no acepta string ahi
         $stmt->bindValue(':lim', $limite, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();
     }
 
-    // ── Registrar movimiento y actualizar stock ───────────────
+    // Registra un movimiento manual y actualiza el stock del producto
+    // Tipos: entrada (suma), salida (resta), ajuste (reemplaza)
+    // Tambien gestiona alertas automaticamente segun el resultado
     public function registrar(int $id_producto, string $tipo, int $cantidad, ?string $descripcion, ?int $id_adm): array
     {
+        // Leer el stock y nombre del producto antes de modificar
         $stk = $this->conn->prepare(
             "SELECT stock_actual, stock_minimo, nombre FROM Producto WHERE id_producto = :pid"
         );
         $stk->execute([':pid' => $id_producto]);
         $prod = $stk->fetch();
 
+        // Verificar que el producto exista
         if (!$prod) {
             return ['ok' => false, 'error' => 'Producto no encontrado.'];
         }
+
+        // Para salidas, verificar que haya suficiente stock disponible
         if ($tipo === 'salida' && $prod['stock_actual'] < $cantidad) {
             return ['ok' => false, 'error' => "Solo hay {$prod['stock_actual']} unidades disponibles."];
         }
 
+        // Insertar el registro del movimiento en la tabla
         $this->conn->prepare(
             "INSERT INTO Movimiento_Inventario (tipo_movimiento, cantidad, descripcion, id_producto, id_administrador)
              VALUES (:tipo, :cant, :desc, :pid, :adm)"
-        )->execute([':tipo'=>$tipo,':cant'=>$cantidad,':desc'=>$descripcion,':pid'=>$id_producto,':adm'=>$id_adm]);
+        )->execute([':tipo'=>$tipo, ':cant'=>$cantidad, ':desc'=>$descripcion, ':pid'=>$id_producto, ':adm'=>$id_adm]);
 
+        // Actualizar el stock segun el tipo de movimiento
         if ($tipo === 'entrada') {
             $sql = "UPDATE Producto SET stock_actual = stock_actual + :cant WHERE id_producto = :pid";
         } elseif ($tipo === 'salida') {
             $sql = "UPDATE Producto SET stock_actual = stock_actual - :cant WHERE id_producto = :pid";
         } else {
+            // ajuste: establece el valor exacto indicado
             $sql = "UPDATE Producto SET stock_actual = :cant WHERE id_producto = :pid";
         }
         $this->conn->prepare($sql)->execute([':cant' => $cantidad, ':pid' => $id_producto]);
 
-        // Gestionar alertas de stock
+        // Leer el stock actualizado para decidir si crear o resolver alertas
         $nuevo = $this->conn->prepare("SELECT stock_actual, stock_minimo FROM Producto WHERE id_producto = :pid");
         $nuevo->execute([':pid' => $id_producto]);
         $act = $nuevo->fetch();
 
         if ($act['stock_minimo'] > 0 && $act['stock_actual'] <= $act['stock_minimo']) {
+            // Stock quedo bajo el minimo: crear alerta solo si no existe una activa
             $ya = $this->conn->prepare("SELECT COUNT(*) FROM Alerta WHERE id_producto=:pid AND estado='activa'");
             $ya->execute([':pid' => $id_producto]);
             if (!(int)$ya->fetchColumn()) {
                 $this->conn->prepare(
                     "INSERT INTO Alerta (tipo_alerta, mensaje, id_producto) VALUES ('stock_bajo', :msg, :pid)"
-                )->execute([':msg'=>"Stock bajo: '{$prod['nombre']}' tiene {$act['stock_actual']} unidades (mínimo: {$act['stock_minimo']})",':pid'=>$id_producto]);
+                )->execute([
+                    ':msg' => "Stock bajo: '{$prod['nombre']}' tiene {$act['stock_actual']} unidades (minimo: {$act['stock_minimo']})",
+                    ':pid' => $id_producto
+                ]);
             }
-        } elseif (in_array($tipo, ['entrada','ajuste'])) {
+        } elseif (in_array($tipo, ['entrada', 'ajuste'])) {
+            // Entrada o ajuste con stock normalizado: resolver alertas activas
             $this->conn->prepare(
                 "UPDATE Alerta SET estado='resuelta', fecha_resolucion=NOW()
                  WHERE id_producto=:pid AND estado='activa'"
@@ -114,7 +107,8 @@ class Inventario
         return ['ok' => true];
     }
 
-    // ── Alertas activas ───────────────────────────────────────
+    // Retorna las N alertas activas ordenadas por stock mas bajo primero
+    // Usado en el panel de alertas del dashboard
     public function alertasActivas(int $limite = 5): array
     {
         $stmt = $this->conn->prepare(
@@ -130,7 +124,7 @@ class Inventario
         return $stmt->fetchAll();
     }
 
-    // ── Reporte movimientos por período ───────────────────────
+    // Retorna todos los movimientos del periodo para el reporte
     public function reporteMovimientos(string $desde, string $hasta): array
     {
         $stmt = $this->conn->prepare(
