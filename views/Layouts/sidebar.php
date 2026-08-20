@@ -77,7 +77,7 @@ if (!function_exists('navLink')) {
 
     </nav>
 
-    <!-- Usuario y logout -->
+    <!-- Solo el boton de dark mode queda en el pie del sidebar -->
     <div style="padding:12px; border-top:1px solid rgba(255,255,255,0.1);">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;">
             <div style="font-size:0.82rem; color:rgba(255,255,255,0.7); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -88,9 +88,6 @@ if (!function_exists('navLink')) {
                 <i id="darkIcon" class="fas fa-moon"></i>
             </button>
         </div>
-        <a href="/DisneyStock/controllers/AuthController.php?accion=logout" class="sidebar-link" style="color:rgba(255,130,130,0.85);">
-            <i class="fas fa-right-from-bracket"></i><span>Cerrar sesión</span>
-        </a>
     </div>
 </aside>
 
@@ -112,5 +109,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Contenido principal -->
 <main style="flex:1; display:flex; flex-direction:column; min-height:100vh; background:#F5F3FF; min-width:0; overflow-y:auto;">
+
+<!-- Topbar superior con nombre de usuario y boton de cerrar sesion -->
+<div style="height:56px; background:#fff; border-bottom:1px solid #DDD6FE; display:flex; align-items:center; justify-content:flex-end; padding:0 28px; gap:12px; flex-shrink:0; box-shadow:0 1px 6px rgba(74,29,150,0.06);">
+
+    <!-- Nombre del usuario con avatar inicial -->
+    <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:34px; height:34px; background:#EDE9FE; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; color:#4A1D96; font-size:0.88rem; flex-shrink:0;">
+            <?= strtoupper(substr($nombre, 0, 1)) ?>
+        </div>
+        <div>
+            <div style="font-size:0.85rem; font-weight:700; color:#1E1B4B; line-height:1.1;"><?= htmlspecialchars($nombre) ?></div>
+            <div style="font-size:0.7rem; color:#7C3AED; font-weight:600; text-transform:capitalize;"><?= $rol ?></div>
+        </div>
+    </div>
+
+    <!-- Separador -->
+    <div style="width:1px; height:28px; background:#DDD6FE;"></div>
+
+    <!-- Boton modo oscuro en la topbar -->
+    <button id="darkToggle" onclick="toggleDark()" title="Modo oscuro" style="background:var(--bg-main,#F5F3FF); border:1.5px solid #DDD6FE; color:#4A1D96;">
+        <i id="darkIcon" class="fas fa-moon"></i>
+    </button>
+
+    <!-- Separador -->
+    <div style="width:1px; height:28px; background:#DDD6FE;"></div>
+
+    <!-- Boton cerrar sesion -->
+    <a href="/DisneyStock/controllers/AuthController.php?accion=logout"
+       style="display:flex; align-items:center; gap:8px; padding:7px 16px; background:#FEE2E2; color:#991B1B; border-radius:8px; text-decoration:none; font-size:0.82rem; font-weight:700; transition:all 0.2s ease;"
+       onmouseover="this.style.background='#FECACA'"
+       onmouseout="this.style.background='#FEE2E2'">
+        <i class="fas fa-right-from-bracket"></i>
+        Cerrar sesi&#243;n
+    </a>
+</div>
+
 <section style="padding:32px; flex:1;">
 

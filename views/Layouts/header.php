@@ -182,26 +182,34 @@ $rol    = $_SESSION['usuario']['rol'];
             border: 1px solid rgba(255,255,255,0.08) !important;
         }
 
-        /* botón dark mode */
+        /* botón dark mode — funciona en topbar */
         #darkToggle {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 30px;
-            height: 30px;
+            width: 34px;
+            height: 34px;
             flex-shrink: 0;
-            border-radius: 50%;
-            border: none;
+            border-radius: 8px;
+            border: 1.5px solid #DDD6FE;
             cursor: pointer;
             font-size: 0.9rem;
-            background: rgba(255,255,255,0.12);
-            color: rgba(237,233,254,0.85);
+            background: #F5F3FF;
+            color: #4A1D96;
             transition: all 0.2s ease;
         }
         #darkToggle:hover {
-            background: rgba(255,255,255,0.22);
-            color: #fff;
-            transform: scale(1.1);
+            background: #EDE9FE;
+            border-color: #7C3AED;
+            transform: scale(1.05);
+        }
+        body.dark #darkToggle {
+            background: #1E2235;
+            border-color: #2A2F45;
+            color: #A78BFA;
+        }
+        body.dark #darkToggle:hover {
+            background: #242840;
         }
     </style>
 </head>
