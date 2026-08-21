@@ -147,6 +147,7 @@ CREATE TABLE `producto` (
   `fecha_ingreso` date DEFAULT NULL,
   `estado` varchar(20) DEFAULT NULL,
   `proveedor` varchar(100) DEFAULT NULL,
+  `imagen` varchar(255) DEFAULT NULL,
   `id_categoria` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 

@@ -9,7 +9,8 @@
 //  - stock_actual y stock_minimo ya NO estan en producto
 //    ahora viven en la tabla inventario (id_inventario, cantidad_stock,
 //    stock_minimo, fecha_actualizacion, id_producto)
-//  - imagen fue eliminada de la tabla producto
+//  - imagen fue eliminada y luego reincorporada como VARCHAR(255)
+//    con upload a /public/uploads/productos/
 //  - nombre de tablas en minuscula (producto, categoria)
 // ============================================================
 
@@ -125,33 +126,33 @@ class Producto
     }
 
     // Inserta un nuevo producto SIN stock (el stock se maneja en Inventario)
+    // imagen es opcional — ruta relativa desde la raiz del proyecto
     // Retorna el ID generado o false
     public function crear(array $datos): int|false
     {
         $this->conn->prepare(
-            "INSERT INTO producto (nombre, precio_venta, precio_compra, fecha_ingreso, estado, proveedor, id_categoria)
-             VALUES (:nombre, :pventa, :pcompra, :fecha, 'activo', :proveedor, :cat)"
+            "INSERT INTO producto (nombre, precio_venta, precio_compra, fecha_ingreso, estado, proveedor, imagen, id_categoria)
+             VALUES (:nombre, :pventa, :pcompra, :fecha, 'activo', :proveedor, :imagen, :cat)"
         )->execute([
             ':nombre'    => $datos['nombre'],
             ':pventa'    => $datos['precio_venta'],
             ':pcompra'   => $datos['precio_compra'],
             ':fecha'     => $datos['fecha_ingreso'],
             ':proveedor' => $datos['proveedor'],
+            ':imagen'    => $datos['imagen'] ?? null,
             ':cat'       => $datos['id_categoria'],
         ]);
         return (int)$this->conn->lastInsertId() ?: false;
     }
 
     // Actualiza campos editables del producto
-    // La imagen fue eliminada en la nueva BD
+    // Si imagen viene en $datos se actualiza, si no se deja intacta
     public function actualizar(int $id, array $datos): void
     {
-        $this->conn->prepare(
-            "UPDATE producto
-             SET nombre=:nombre, precio_venta=:pventa, precio_compra=:pcompra,
-                 fecha_ingreso=:fecha, proveedor=:proveedor, id_categoria=:cat
-             WHERE id_producto=:id"
-        )->execute([
+        // Construir SET dinamicamente para no pisar la imagen si no se subio una nueva
+        $set    = "nombre=:nombre, precio_venta=:pventa, precio_compra=:pcompra,
+                   fecha_ingreso=:fecha, proveedor=:proveedor, id_categoria=:cat";
+        $params = [
             ':nombre'    => $datos['nombre'],
             ':pventa'    => $datos['precio_venta'],
             ':pcompra'   => $datos['precio_compra'],
@@ -159,7 +160,17 @@ class Producto
             ':proveedor' => $datos['proveedor'],
             ':cat'       => $datos['id_categoria'],
             ':id'        => $id,
-        ]);
+        ];
+
+        // Solo actualizar imagen si viene informada en $datos
+        if (array_key_exists('imagen', $datos)) {
+            $set .= ", imagen=:imagen";
+            $params[':imagen'] = $datos['imagen'];
+        }
+
+        $this->conn->prepare(
+            "UPDATE producto SET $set WHERE id_producto=:id"
+        )->execute($params);
     }
 
     // Alterna entre 'activo' e 'inactivo' con IF directo en SQL

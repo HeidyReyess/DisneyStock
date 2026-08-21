@@ -72,10 +72,28 @@ require_once __DIR__ . '/../../helpers/auth.php';
         <tr style="border-bottom:1px solid #F3F0FF;" onmouseover="this.style.background='#F5F3FF'" onmouseout="this.style.background=''">
             <td style="padding:12px 16px;font-family:monospace;color:#7C3AED;font-weight:600;">#<?= $p['id_producto'] ?></td>
             <td style="padding:12px 16px;font-weight:600;color:#4A1D96;">
-                <?= htmlspecialchars($p['nombre']) ?>
-                <?php if ($p['proveedor']): ?>
-                <div style="font-size:0.78rem;color:#94A3B8;font-weight:400;">Prov: <?= htmlspecialchars($p['proveedor']) ?></div>
-                <?php endif; ?>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <!-- Icono de imagen: thumbnail si tiene, placeholder si no -->
+                    <?php if (!empty($p['imagen'])): ?>
+                    <img src="/DisneyStock/public/uploads/productos/<?= htmlspecialchars($p['imagen']) ?>"
+                         alt="<?= htmlspecialchars($p['nombre']) ?>"
+                         onclick="verImagen('/DisneyStock/public/uploads/productos/<?= htmlspecialchars($p['imagen']) ?>','<?= htmlspecialchars($p['nombre'], ENT_QUOTES) ?>')"
+                         title="Ver imagen"
+                         style="width:38px;height:38px;border-radius:8px;object-fit:cover;cursor:pointer;border:2px solid #DDD6FE;flex-shrink:0;transition:transform 0.15s;"
+                         onmouseover="this.style.transform='scale(1.12)'"
+                         onmouseout="this.style.transform='scale(1)'">
+                    <?php else: ?>
+                    <div style="width:38px;height:38px;border-radius:8px;background:#F3F0FF;border:2px dashed #DDD6FE;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas fa-image" style="color:#C4B5FD;font-size:0.9rem;"></i>
+                    </div>
+                    <?php endif; ?>
+                    <div>
+                        <?= htmlspecialchars($p['nombre']) ?>
+                        <?php if ($p['proveedor']): ?>
+                        <div style="font-size:0.78rem;color:#94A3B8;font-weight:400;">Prov: <?= htmlspecialchars($p['proveedor']) ?></div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </td>
             <td style="padding:12px 16px;">
                 <span style="background:#EDE9FE;color:#4A1D96;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;">
@@ -132,7 +150,7 @@ require_once __DIR__ . '/../../helpers/auth.php';
             <h2 id="modalTituloP" style="font-size:1.2rem;font-weight:800;color:#4A1D96;font-family:'Outfit',sans-serif;">Nuevo Producto</h2>
             <button onclick="cerrarModal('modalProducto')" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#94A3B8;">&times;</button>
         </div>
-        <form method="POST" action="/DisneyStock/controllers/ProductoController.php">
+        <form method="POST" action="/DisneyStock/controllers/ProductoController.php" enctype="multipart/form-data">
             <input type="hidden" name="accion" id="accionP" value="crear">
             <input type="hidden" name="id" id="pId">
             <?php csrfField(); ?>
@@ -141,6 +159,32 @@ require_once __DIR__ . '/../../helpers/auth.php';
                     <label style="font-size:0.85rem;font-weight:600;color:#334155;display:block;margin-bottom:6px;">Nombre *</label>
                     <input type="text" name="nombre" id="pNombre" required maxlength="255" style="width:100%;padding:10px 14px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:0.9rem;outline:none;box-sizing:border-box;">
                 </div>
+
+                <!-- Campo de imagen con preview -->
+                <div style="grid-column:1/-1;">
+                    <label style="font-size:0.85rem;font-weight:600;color:#334155;display:block;margin-bottom:6px;">Imagen del producto <span style="font-weight:400;color:#94A3B8;">(JPG, PNG, WEBP — máx. 2MB)</span></label>
+                    <div style="display:flex;align-items:center;gap:14px;">
+                        <!-- Preview de imagen -->
+                        <div id="previewWrap" style="width:72px;height:72px;border-radius:10px;border:2px dashed #DDD6FE;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#F9F7FF;cursor:pointer;" onclick="document.getElementById('pImagen').click()">
+                            <img id="previewImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;">
+                            <i id="previewIcon" class="fas fa-camera" style="color:#C4B5FD;font-size:1.3rem;"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <input type="file" name="imagen" id="pImagen" accept="image/jpeg,image/png,image/webp,image/gif"
+                                   style="display:none;" onchange="previewImagen(this)">
+                            <button type="button" onclick="document.getElementById('pImagen').click()"
+                                    style="width:100%;padding:9px 14px;border:1.5px dashed #7C3AED;border-radius:8px;background:#FAF7FF;color:#7C3AED;font-size:0.85rem;font-weight:600;cursor:pointer;text-align:left;">
+                                <i class="fas fa-upload" style="margin-right:6px;"></i>
+                                <span id="pImagenLabel">Seleccionar imagen...</span>
+                            </button>
+                            <div id="pImagenError" style="color:#DC2626;font-size:0.78rem;margin-top:4px;display:none;"></div>
+                            <button type="button" id="btnQuitarImg" onclick="quitarImagen()" style="display:none;margin-top:6px;background:none;border:none;color:#94A3B8;font-size:0.78rem;cursor:pointer;padding:0;">
+                                <i class="fas fa-times"></i> Quitar imagen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                     <label style="font-size:0.85rem;font-weight:600;color:#334155;display:block;margin-bottom:6px;">Categor&#237;a</label>
                     <select name="id_categoria" id="pCategoria" style="width:100%;padding:10px 14px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:0.9rem;outline:none;background:#fff;box-sizing:border-box;">
@@ -212,35 +256,121 @@ require_once __DIR__ . '/../../helpers/auth.php';
 </div>
 
 <script>
+// ── Preview de imagen en el modal ─────────────────────────
+function previewImagen(input) {
+    const err   = document.getElementById('pImagenError');
+    const label = document.getElementById('pImagenLabel');
+    const img   = document.getElementById('previewImg');
+    const icon  = document.getElementById('previewIcon');
+    const btn   = document.getElementById('btnQuitarImg');
+
+    err.style.display = 'none';
+
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+
+    // Validar tamaño en el cliente (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        err.textContent = 'La imagen supera 2MB. Elige una más pequeña.';
+        err.style.display = 'block';
+        input.value = '';
+        return;
+    }
+
+    // Mostrar preview con FileReader
+    const reader = new FileReader();
+    reader.onload = e => {
+        img.src = e.target.result;
+        img.style.display = 'block';
+        icon.style.display = 'none';
+        label.textContent  = file.name;
+        btn.style.display  = 'inline-block';
+    };
+    reader.readAsDataURL(file);
+}
+
+function quitarImagen() {
+    document.getElementById('pImagen').value       = '';
+    document.getElementById('previewImg').src      = '';
+    document.getElementById('previewImg').style.display  = 'none';
+    document.getElementById('previewIcon').style.display = '';
+    document.getElementById('pImagenLabel').textContent  = 'Seleccionar imagen...';
+    document.getElementById('btnQuitarImg').style.display = 'none';
+}
+
+// Resetea el campo de imagen al abrir un modal limpio o al editar
+function resetPreview(imagenUrl, nombre) {
+    const img   = document.getElementById('previewImg');
+    const icon  = document.getElementById('previewIcon');
+    const label = document.getElementById('pImagenLabel');
+    const btn   = document.getElementById('btnQuitarImg');
+
+    document.getElementById('pImagen').value = '';
+    document.getElementById('pImagenError').style.display = 'none';
+
+    if (imagenUrl) {
+        img.src = imagenUrl;
+        img.style.display   = 'block';
+        icon.style.display  = 'none';
+        label.textContent   = 'Cambiar imagen...';
+        btn.style.display   = 'inline-block';
+    } else {
+        img.src = '';
+        img.style.display   = 'none';
+        icon.style.display  = '';
+        label.textContent   = 'Seleccionar imagen...';
+        btn.style.display   = 'none';
+    }
+}
+
+// ── Modal fullscreen de imagen ────────────────────────────
+function verImagen(url, nombre) {
+    document.getElementById('imgPreview').src   = url;
+    document.getElementById('imgNombre').textContent = nombre;
+    document.getElementById('modalImagen').style.display = 'flex';
+}
+
+// ── Modal crear/editar ────────────────────────────────────
 function abrirModal() {
     document.getElementById('modalTituloP').textContent = 'Nuevo Producto';
     document.getElementById('accionP').value = 'crear';
-    document.getElementById('pId').value = '';
+    document.getElementById('pId').value     = '';
     ['pNombre','pProveedor'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('pVenta').value = 0;
-    document.getElementById('pCompra').value = 0;
-    document.getElementById('pStock').value = 0;
-    document.getElementById('pMinimo').value = 0;
-    document.getElementById('pFecha').value = '<?= date('Y-m-d') ?>';
+    document.getElementById('pVenta').value    = 0;
+    document.getElementById('pCompra').value   = 0;
+    document.getElementById('pStock').value    = 0;
+    document.getElementById('pMinimo').value   = 0;
+    document.getElementById('pFecha').value    = '<?= date('Y-m-d') ?>';
     document.getElementById('pCategoria').value = '';
+    resetPreview(null, '');
     document.getElementById('modalProducto').style.display = 'flex';
 }
+
 function editarProducto(p) {
     document.getElementById('modalTituloP').textContent = 'Editar Producto';
-    document.getElementById('accionP').value = 'editar';
-    document.getElementById('pId').value        = p.id_producto;
-    document.getElementById('pNombre').value    = p.nombre || '';
+    document.getElementById('accionP').value  = 'editar';
+    document.getElementById('pId').value      = p.id_producto;
+    document.getElementById('pNombre').value  = p.nombre    || '';
     document.getElementById('pProveedor').value = p.proveedor || '';
-    document.getElementById('pVenta').value     = p.precio_venta || 0;
-    document.getElementById('pCompra').value    = p.precio_compra || 0;
-    document.getElementById('pStock').value     = p.stock_actual || 0;
-    document.getElementById('pMinimo').value    = p.stock_minimo || 0;
-    document.getElementById('pFecha').value     = p.fecha_ingreso || '<?= date('Y-m-d') ?>';
+    document.getElementById('pVenta').value   = p.precio_venta  || 0;
+    document.getElementById('pCompra').value  = p.precio_compra || 0;
+    document.getElementById('pStock').value   = p.stock_actual  || 0;
+    document.getElementById('pMinimo').value  = p.stock_minimo  || 0;
+    document.getElementById('pFecha').value   = p.fecha_ingreso || '<?= date('Y-m-d') ?>';
     document.getElementById('pCategoria').value = p.id_categoria || '';
+
+    // Mostrar la imagen actual si tiene
+    const imgUrl = p.imagen
+        ? '/DisneyStock/public/uploads/productos/' + p.imagen
+        : null;
+    resetPreview(imgUrl, p.nombre || '');
+
     document.getElementById('modalProducto').style.display = 'flex';
 }
+
 function abrirModalCat() { document.getElementById('modalCat').style.display = 'flex'; }
-function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
+function cerrarModal(id)  { document.getElementById(id).style.display = 'none'; }
+
 function toggleActivo(id, estado) {
     const txt = estado === 'activo' ? 'desactivar' : 'activar';
     Swal.fire({
@@ -252,6 +382,7 @@ function toggleActivo(id, estado) {
         confirmButtonText: 'S\u00ed'
     }).then(r => { if (r.isConfirmed) window.location = '/DisneyStock/controllers/ProductoController.php?accion=toggle&id=' + id; });
 }
+
 function eliminarProducto(id, nombre) {
     Swal.fire({
         title: '\u00bfEliminar producto?',
@@ -263,7 +394,10 @@ function eliminarProducto(id, nombre) {
         confirmButtonText: 'S\u00ed, eliminar'
     }).then(r => { if (r.isConfirmed) window.location = '/DisneyStock/controllers/ProductoController.php?accion=eliminar&id=' + id; });
 }
-window.onclick = e => { if (['modalProducto','modalCat'].includes(e.target.id)) cerrarModal(e.target.id); };
+
+window.onclick = e => {
+    if (['modalProducto','modalCat'].includes(e.target.id)) cerrarModal(e.target.id);
+};
 </script>
 
 <?php require_once __DIR__ . '/../Layouts/footer.php'; ?>
