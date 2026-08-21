@@ -329,3 +329,25 @@ body {
         box-shadow: var(--shadow-lg);
     }
 }
+
+/* ── Recordar usuario ───────────────────────────────────────── */
+.remember-row {
+    margin-bottom: 0.5rem;
+}
+
+.remember-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+    cursor: pointer;
+    user-select: none;
+}
+
+.remember-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #4A1D96;
+    cursor: pointer;
+}
