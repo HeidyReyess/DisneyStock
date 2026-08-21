@@ -132,9 +132,10 @@ class Venta
         $this->conn->beginTransaction();
         try {
             // Paso 1: insertar la cabecera de la venta con id_usuario unico
+            // impuesto se guarda como 0 — la logica de impuesto no esta implementada aun
             $this->conn->prepare(
-                "INSERT INTO venta (fecha_venta, subtotal, descuento, total, estado, id_usuario)
-                 VALUES (CURDATE(), :sub, :desc, :total, 'completada', :uid)"
+                "INSERT INTO venta (fecha_venta, subtotal, impuesto, descuento, total, estado, id_usuario)
+                 VALUES (CURDATE(), :sub, 0, :desc, :total, 'completada', :uid)"
             )->execute([
                 ':sub'   => $subtotal,
                 ':desc'  => $descuento,
