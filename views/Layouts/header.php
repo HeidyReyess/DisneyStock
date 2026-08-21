@@ -203,13 +203,59 @@ $rol    = $_SESSION['usuario']['rol'];
             border-color: #7C3AED;
             transform: scale(1.05);
         }
+        /* ── Modo oscuro: textos inline en tablas y filas ── */
+        body.dark td,
+        body.dark td * {
+            color: var(--text-primary) !important;
+        }
+        body.dark tr:hover td {
+            background: var(--bg-row-hover) !important;
+        }
+        /* Mantener colores de estado (badges) */
+        body.dark [style*="background:#D1FAE5"] { background:#064e3b !important; color:#6ee7b7 !important; }
+        body.dark [style*="background:#FEE2E2"] { background:#450a0a !important; color:#fca5a5 !important; }
+        body.dark [style*="background:#FEF3C7"] { background:#431407 !important; color:#fcd34d !important; }
+        body.dark [style*="background:#EDE9FE"] { background:#2e1065 !important; color:#c4b5fd !important; }
+
+        /* ── Topbar modo oscuro ── */
+        body.dark #topbar {
+            background: var(--bg-card) !important;
+            border-bottom-color: var(--border-color) !important;
+        }
+        body.dark #topbar .topbar-nombre {
+            color: var(--text-primary) !important;
+        }
+        body.dark #topbar .topbar-rol {
+            color: #A78BFA !important;
+        }
+        body.dark #topbar .topbar-avatar {
+            background: #2A2F45 !important;
+            color: #A78BFA !important;
+        }
+        body.dark #topbar .topbar-sep {
+            background: var(--border-color) !important;
+        }
+        body.dark #topbar .topbar-logout {
+            background: rgba(220,38,38,0.15) !important;
+            color: #FCA5A5 !important;
+        }
+        body.dark #topbar .topbar-logout:hover {
+            background: rgba(220,38,38,0.25) !important;
+        }
+
+        /* Modo oscuro: darkToggle */
         body.dark #darkToggle {
-            background: #1E2235;
-            border-color: #2A2F45;
-            color: #A78BFA;
+            background: #1E2235 !important;
+            border-color: #2A2F45 !important;
+            color: #A78BFA !important;
         }
         body.dark #darkToggle:hover {
-            background: #242840;
+            background: #242840 !important;
+        }
+
+        /* Filas de tabla en modo oscuro */
+        body.dark tbody tr:hover {
+            background: var(--bg-row-hover) !important;
         }
     </style>
 </head>
