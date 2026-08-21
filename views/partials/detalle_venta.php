@@ -34,7 +34,7 @@ $ec = match($venta['estado']) {
     <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
         <span style="color:#6B7280;font-size:0.85rem;">Fecha</span>
         <!-- Formatear timestamp de BD a formato legible dd/mm/YYYY HH:mm -->
-        <span><?= date('d/m/Y H:i', strtotime($venta['fecha_venta'])) ?></span>
+        <span><?= date('d/m/Y', strtotime($venta['fecha_venta'])) ?></span>
     </div>
 
     <div style="display:flex;justify-content:space-between;">
