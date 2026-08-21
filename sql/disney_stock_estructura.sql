@@ -432,6 +432,25 @@ ALTER TABLE `reporte`
 --
 ALTER TABLE `venta`
   ADD CONSTRAINT `venta_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`);
+-- ============================================================
+--  DATOS INICIALES
+-- ============================================================
+
+--
+-- Categorias iniciales para Variedades Disney (tienda de ropa y accesorios)
+--
+INSERT INTO `categoria` (`nombre_categoria`, `descripcion`) VALUES
+('Manillas',    'Pulseras y manillas de todo tipo'),
+('Vestidos',    'Vestidos y faldas para dama'),
+('Accesorios',  'Collares, aretes y accesorios varios'),
+('Ropa',        'Prendas de vestir en general'),
+('Bolsos',      'Bolsos, carteras y monederos'),
+('Zapatos',     'Calzado para dama y niña'),
+('Ropa Niña',   'Prendas de vestir para niñas'),
+('Bisutería',   'Joyas y adornos de bisutería'),
+('Cinturones',  'Cinturones y correas de moda'),
+('Gorras',      'Gorras, sombreros y viseras');
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
