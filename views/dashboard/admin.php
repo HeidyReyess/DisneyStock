@@ -54,7 +54,7 @@ function fmt(float $n): string {
         </p>
     </div>
     <?php if (in_array($rol, ['admin', 'empleado'])): ?>
-    <a href="/DisneyStock/controllers/VentaViewController.php"
+    <a href="/DisneyStock/controllers/VentaController.php"
        style="background:linear-gradient(135deg,#7C3AED,#3B82F6); color:#fff; padding:10px 20px; border-radius:8px; font-weight:600; font-size:0.9rem; display:flex; align-items:center; gap:8px; text-decoration:none; box-shadow:0 4px 12px rgba(124,58,237,0.3);">
         <i class="fas fa-plus"></i> Nueva Venta
     </a>
@@ -121,7 +121,7 @@ function fmt(float $n): string {
             <h3 style="font-size:1rem; font-weight:700; color:#4A1D96;">
                 <i class="fas fa-receipt" style="margin-right:8px; color:#7C3AED;"></i>Ventas Recientes
             </h3>
-            <a href="/DisneyStock/controllers/VentaViewController.php" style="font-size:0.85rem; color:#7C3AED; font-weight:600; text-decoration:none;">Ver todas →</a>
+            <a href="/DisneyStock/controllers/VentaController.php" style="font-size:0.85rem; color:#7C3AED; font-weight:600; text-decoration:none;">Ver todas →</a>
         </div>
 
         <?php if (empty($ventasRecientes)): ?>
@@ -129,7 +129,7 @@ function fmt(float $n): string {
             <i class="fas fa-receipt" style="font-size:2.5rem; display:block; margin-bottom:12px; opacity:0.3;"></i>
             <p>No hay ventas registradas aún.</p>
             <?php if (in_array($rol, ['admin','empleado'])): ?>
-            <a href="/DisneyStock/controllers/VentaViewController.php" style="display:inline-block; margin-top:12px; background:linear-gradient(135deg,#7C3AED,#3B82F6); color:#fff; padding:8px 18px; border-radius:8px; font-size:0.85rem; text-decoration:none;">Registrar primera venta</a>
+            <a href="/DisneyStock/controllers/VentaController.php" style="display:inline-block; margin-top:12px; background:linear-gradient(135deg,#7C3AED,#3B82F6); color:#fff; padding:8px 18px; border-radius:8px; font-size:0.85rem; text-decoration:none;">Registrar primera venta</a>
             <?php endif; ?>
         </div>
         <?php else: ?>
@@ -196,7 +196,7 @@ function fmt(float $n): string {
                 </div>
                 <?php endforeach; ?>
                 <?php if ($stockBajo > 5): ?>
-                <a href="/DisneyStock/controllers/InventarioViewController.php" style="text-align:center; font-size:0.82rem; color:#7C3AED; font-weight:600; text-decoration:none; padding-top:4px;">Ver todos (<?= $stockBajo ?>)</a>
+                <a href="/DisneyStock/controllers/InventarioController.php" style="text-align:center; font-size:0.82rem; color:#7C3AED; font-weight:600; text-decoration:none; padding-top:4px;">Ver todos (<?= $stockBajo ?>)</a>
                 <?php endif; ?>
             </div>
             <?php endif; ?>
