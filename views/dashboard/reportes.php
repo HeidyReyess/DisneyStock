@@ -94,7 +94,7 @@ if (!isset($datos)) {
                 if (in_array($columnas[$i] ?? '', ['Subtotal','Descuento','Total','Valor Costo','Valor Venta'])) {
                     echo '$' . number_format((float)$v, 0, ',', '.');
                 } elseif (in_array($columnas[$i] ?? '', ['Fecha','Actualización'])) {
-                    echo $v ? date('d/m/Y H:i', strtotime($v)) : '—';
+                    echo $v ? date('d/m/Y', strtotime($v)) : '—';
                 } elseif ($columnas[$i] === 'Estado') {
                     $ec = match($v) { 'completada'=>['#D1FAE5','#065F46'], 'anulada'=>['#FEE2E2','#991B1B'], default=>['#FEF3C7','#92400E'] };
                     echo "<span style='background:{$ec[0]};color:{$ec[1]};padding:2px 8px;border-radius:20px;font-size:0.78rem;font-weight:600;text-transform:capitalize;'>$v</span>";
