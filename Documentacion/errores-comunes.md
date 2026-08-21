@@ -1,21 +1,22 @@
 # Errores Comunes y Cómo Resolverlos — DisneyStock
 
-**Propósito:** Guía de diagnóstico para cuando el código es modificado externamente  
-**Audiencia:** Desarrolladora del proyecto ante revisiones del tutor  
-**Versión:** 1.0.1 — Agosto 2026
+**Propósito:** Diagnóstico cuando el código es modificado externamente (revisiones del tutor)  
+**Versión:** 1.0.1 — Agosto 2026  
+**Autor:** Heidy Johanna Reyes Quesada
 
 ---
 
-## 📋 Tabla de contenido
+## Tabla de contenido
 
 1. [Errores de base de datos](#errores-de-base-de-datos)
 2. [Errores de autenticación y sesión](#errores-de-autenticación-y-sesión)
 3. [Errores de rutas y redirección](#errores-de-rutas-y-redirección)
 4. [Errores de seguridad CSRF](#errores-de-seguridad-csrf)
 5. [Errores de inventario y ventas](#errores-de-inventario-y-ventas)
-6. [Errores visuales y de vistas](#errores-visuales-y-de-vistas)
-7. [Errores de configuración del servidor](#errores-de-configuración-del-servidor)
+6. [Errores visuales](#errores-visuales)
+7. [Errores de servidor](#errores-de-servidor)
 8. [Lista de verificación rápida](#lista-de-verificación-rápida)
+9. [Restaurar con Git](#restaurar-con-git)
 
 ---
 
@@ -23,75 +24,58 @@
 
 ---
 
-### ❌ E01 — Login falla con "Usuario no encontrado" aunque el usuario existe
+### E01 — Login falla aunque el usuario existe
 
-**Síntoma:** Al intentar iniciar sesión, siempre redirige al login con el error, incluso con credenciales correctas.
+**Síntoma:** Siempre redirige al login con "Usuario no encontrado", incluso con credenciales correctas.
 
-**Causa más probable:** El nombre del campo de contraseña fue cambiado.
-
-**Dónde buscar:**
+**Causa más probable:** Se cambió el nombre del campo de contraseña.
 
 ```php
-// models/Usuario.php — línea del SELECT
-// CORRECTO:
-"u.contrasenia AS password_hash"
+// models/Usuario.php — CORRECTO:
+"u.contrasenia AS password_hash"   // con 'i'
 
-// INCORRECTO (lo que introdujo el tutor):
-"u.contrasena AS password_hash"   // sin la 'i'
-"u.password AS password_hash"     // nombre distinto
-"u.pass AS password_hash"
+// INCORRECTO (lo que introduce el tutor):
+"u.contrasena AS password_hash"    // sin 'i'
+"u.password AS password_hash"      // nombre distinto
 ```
 
-**También verificar en BD:**
+**Verificar en BD:**
 ```sql
 DESCRIBE usuario;
--- Debe aparecer la columna 'contrasenia' (con i)
--- Si aparece 'contrasena', la BD está en el esquema viejo
+-- Debe aparecer 'contrasenia' (con i)
 ```
 
-**Solución:**
+**Solución si la columna está mal:**
 ```sql
--- Si la columna está mal nombrada en BD:
 ALTER TABLE usuario CHANGE contrasena contrasenia VARCHAR(100);
 ```
 
 ---
 
-### ❌ E02 — "Column not found: cantidad_stock" o error en inventario
+### E02 — Error "Column not found: cantidad_stock"
 
-**Síntoma:** Página de inventario o productos da error de columna no encontrada.
+**Síntoma:** Página de inventario o productos da error de columna.
 
-**Causa:** El tutor usó `DisneyStock.sql` (esquema viejo) para recrear la BD, o modificó `Producto.php` para buscar el stock en la tabla `producto`.
+**Causa:** Se usó `DisneyStock.sql` (esquema viejo) para recrear la BD, o se modificó `Producto.php` para buscar stock en `producto`.
 
-**Verificar:**
-```sql
--- Debe existir la tabla inventario
-SHOW TABLES LIKE 'inventario';
-
--- Debe tener estas columnas
-DESCRIBE inventario;
--- id_inventario, cantidad_stock, stock_minimo, fecha_actualizacion, id_producto
-```
-
-**En el modelo — CORRECTO:**
+**CORRECTO en `models/Producto.php`:**
 ```php
-// models/Producto.php
 "LEFT JOIN inventario i ON i.id_producto = p.id_producto"
 "COALESCE(i.cantidad_stock, 0) AS stock_actual"
-
-// INCORRECTO (esquema viejo):
-"p.stock_actual"  // campo que ya NO existe en producto
 ```
 
-**Solución:** Recrear la BD con `sql/disney_stock_estructura.sql`, nunca con `DisneyStock.sql`.
+**INCORRECTO:**
+```php
+"p.stock_actual"   // columna que no existe en producto en la BD actual
+```
+
+**Solución:** Recrear BD únicamente con `sql/disney_stock_estructura.sql`.
 
 ---
 
-### ❌ E03 — Error al crear venta: "Column id_empleado not found"
+### E03 — Error al crear venta: "Column id_empleado not found"
 
-**Síntoma:** Al registrar una venta, da error de columna en el INSERT.
-
-**Causa:** El INSERT de venta fue modificado para usar los campos del esquema viejo.
+**Síntoma:** Al registrar una venta, da error en el INSERT.
 
 **CORRECTO en `models/Venta.php`:**
 ```php
@@ -99,24 +83,16 @@ DESCRIBE inventario;
  VALUES (CURDATE(), :sub, 0, :desc, :total, 'completada', :uid)"
 ```
 
-**INCORRECTO (esquema viejo):**
+**INCORRECTO:**
 ```php
-"INSERT INTO venta (..., id_empleado, id_administrador)"  // esas columnas no existen
-```
-
-**Verificar en BD:**
-```sql
-DESCRIBE venta;
--- Debe tener 'id_usuario', NO 'id_empleado' ni 'id_administrador'
+"INSERT INTO venta (..., id_empleado, id_administrador)"  // columnas del esquema viejo
 ```
 
 ---
 
-### ❌ E04 — Stock no se descuenta al vender
+### E04 — Stock no se descuenta al vender
 
-**Síntoma:** Se registra la venta pero el inventario no cambia.
-
-**Causa:** El UPDATE de stock fue modificado para apuntar a `producto` en lugar de `inventario`.
+**Síntoma:** La venta se registra pero `inventario.cantidad_stock` no cambia.
 
 **CORRECTO en `models/Venta.php`:**
 ```php
@@ -128,21 +104,19 @@ DESCRIBE venta;
 **INCORRECTO:**
 ```php
 "UPDATE producto SET stock_actual = stock_actual - :cant WHERE id_producto = :pid"
-// La columna stock_actual NO existe en producto en la BD actual
+// stock_actual no existe en producto
 ```
 
 ---
 
-### ❌ E05 — "estado = 'activo'" no filtra usuarios correctamente
+### E05 — Usuarios inactivos pueden iniciar sesión
 
-**Síntoma:** Usuarios inactivos pueden iniciar sesión, o usuarios activos aparecen como inexistentes.
+**Síntoma:** Usuarios marcados como inactivos pasan el login.
 
-**Causa:** El WHERE del login fue cambiado para usar el campo del esquema viejo.
-
-**CORRECTO:**
+**CORRECTO en `models/Usuario.php`:**
 ```sql
 WHERE u.usuario = :usuario AND u.estado = 'activo'
--- estado es VARCHAR(20) con valores 'activo' o 'inactivo'
+-- estado es VARCHAR con valores 'activo' / 'inactivo'
 ```
 
 **INCORRECTO (esquema viejo):**
@@ -157,38 +131,32 @@ WHERE u.usuario = :usuario AND u.activo = 1
 
 ---
 
-### ❌ E06 — Cualquier URL es accesible sin estar autenticado
+### E06 — Cualquier URL es accesible sin estar autenticado
 
-**Síntoma:** Se puede acceder a productos, ventas o usuarios sin iniciar sesión.
+**Síntoma:** Se puede entrar a productos, ventas o usuarios sin iniciar sesión.
 
 **Causa:** Se eliminó o comentó `requireAuth()` en el controller.
 
-**Verificar en cada controller:**
+**CORRECTO — primeras líneas de cada controller:**
 ```php
-// CORRECTO — primeras líneas después de los require_once:
 session_start();
 require_once __DIR__ . '/../helpers/auth.php';
-requireAuth();           // cualquier usuario autenticado
+requireAuth();        // cualquier usuario autenticado
 // o
-requireAuth('admin');    // solo admin
+requireAuth('admin'); // solo admin
 ```
 
-**INCORRECTO (lo que puede haber hecho el tutor):**
+**INCORRECTO:**
 ```php
-// Comentado o eliminado:
-// requireAuth();
-
-// Reemplazado por verificación incompleta:
-if (!$_SESSION['usuario']) { ... }  // da error si $_SESSION no existe
+// requireAuth();   ← comentado o eliminado
+if (!$_SESSION['usuario']) { ... }  // verificación incompleta, da error si sesión no existe
 ```
 
 ---
 
-### ❌ E07 — Empleados pueden acceder al Dashboard o gestionar usuarios
+### E07 — Empleados acceden al Dashboard o gestionan usuarios
 
-**Síntoma:** Un usuario con rol empleado ve el dashboard o puede crear/eliminar usuarios.
-
-**Causa:** La verificación de rol fue eliminada o debilitada.
+**Síntoma:** Un empleado ve el dashboard principal o puede crear/eliminar usuarios.
 
 **CORRECTO en `DashboardController.php`:**
 ```php
@@ -203,68 +171,42 @@ if ($_SESSION['usuario']['rol'] === 'empleado') {
 requireAuth('admin', '/DisneyStock/controllers/DashboardController.php');
 ```
 
-**CORRECTO en vistas (botones que no deben ver los empleados):**
-```php
-<?php if ($rol === 'admin'): ?>
-    <button>Eliminar</button>
-<?php endif; ?>
-```
-
 ---
 
-### ❌ E08 — Al recargar la página después de un POST, el formulario se reenvía
+### E08 — Recargar la página reenvía el formulario
 
-**Síntoma:** El navegador pregunta "¿Reenviar datos del formulario?" al recargar.
+**Síntoma:** El navegador pregunta "¿Reenviar datos del formulario?" al presionar F5.
 
-**Causa:** Un controller que procesa POST no termina con `header("Location: ...")`.
+**Causa:** Un controller POST no termina con `header("Location: ...")`.
 
 **CORRECTO — patrón PRG obligatorio:**
 ```php
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validateCsrf();
     // ... procesar
-    $_SESSION['alert'] = ['icon' => 'success', ...];
+    $_SESSION['alert'] = ['icon' => 'success', 'title' => '...', 'text' => '...'];
     header("Location: /DisneyStock/controllers/ProductoController.php");
-    exit;  // ← SIEMPRE después del header
-}
-```
-
-**INCORRECTO:**
-```php
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // ... procesar
-    echo "Guardado correctamente";  // no redirige → doble envío posible
+    exit;  // siempre después del header
 }
 ```
 
 ---
 
-### ❌ E09 — Contraseñas guardadas en texto plano
+### E09 — Contraseñas guardadas en texto plano
 
-**Síntoma:** En la BD aparecen contraseñas legibles como "admin123" en lugar de un hash.
+**Síntoma:** En la BD aparece "admin123" en lugar de un hash `$2y$10$...`.
 
-**Causa:** Se reemplazó `password_hash()` por asignación directa.
-
-**CORRECTO en `controllers/UsuarioController.php`:**
+**CORRECTO:**
 ```php
-'password_hash' => password_hash($password, PASSWORD_DEFAULT)
-// Genera algo como: $2y$10$92IXUNpkjO0rOQ5...
+password_hash($password, PASSWORD_DEFAULT)   // al guardar
+password_verify($password, $user['password_hash'])  // al verificar
 ```
 
 **INCORRECTO:**
 ```php
-'password_hash' => $password        // texto plano — vulnerabilidad crítica
-'password_hash' => md5($password)   // md5 es inseguro para contraseñas
-'password_hash' => sha1($password)  // sha1 también es inseguro
-```
-
-**Verificar también el login:**
-```php
-// CORRECTO:
-password_verify($password, $user['password_hash'])
-
-// INCORRECTO:
-$password === $user['password_hash']  // comparación directa
+$password                  // texto plano
+md5($password)             // md5 es inseguro para contraseñas
+$password === $user['contrasenia']  // comparación directa
 ```
 
 ---
@@ -273,14 +215,12 @@ $password === $user['password_hash']  // comparación directa
 
 ---
 
-### ❌ E10 — Links del sidebar dan 404 o redirigen a una página en blanco
+### E10 — Links del sidebar dan 404
 
-**Síntoma:** Al hacer clic en un módulo del menú lateral, página no encontrada.
-
-**Causa:** Las rutas en `sidebar.php` fueron modificadas con nombres incorrectos.
+**Síntoma:** Al hacer clic en un módulo del menú, página no encontrada.
 
 **Rutas correctas en `views/Layouts/sidebar.php`:**
-```php
+```
 /DisneyStock/controllers/DashboardController.php
 /DisneyStock/controllers/VentaController.php
 /DisneyStock/controllers/ProductoController.php
@@ -291,22 +231,19 @@ $password === $user['password_hash']  // comparación directa
 /DisneyStock/controllers/InformacionController.php
 ```
 
-**Errores comunes introducidos:**
-```php
-// ❌ Nombre incorrecto del archivo
-/DisneyStock/controllers/VentaViewController.php       // no existe
-/DisneyStock/controllers/InventarioViewController.php  // no existe
-/DisneyStock/views/dashboard/configuracion.php         // acceso directo sin auth
-/DisneyStock/views/dashboard/informacion.php           // acceso directo sin auth
+**Errores comunes:**
+```
+/DisneyStock/controllers/VentaViewController.php        ← no existe
+/DisneyStock/controllers/InventarioViewController.php   ← no existe
+/DisneyStock/views/dashboard/configuracion.php          ← acceso directo sin auth
+/DisneyStock/views/dashboard/informacion.php            ← acceso directo sin auth
 ```
 
 ---
 
-### ❌ E11 — Después de login, siempre redirige al Dashboard aunque el usuario sea empleado
+### E11 — Empleados siempre caen en el Dashboard
 
-**Síntoma:** Un empleado inicia sesión y cae en el Dashboard (que está restringido).
-
-**Causa:** La lógica de destino post-login fue simplificada.
+**Síntoma:** Un empleado inicia sesión y llega al Dashboard en lugar de Ventas.
 
 **CORRECTO en `controllers/AuthController.php`:**
 ```php
@@ -318,39 +255,22 @@ header("Location: " . $destino);
 exit;
 ```
 
-**INCORRECTO:**
-```php
-header("Location: /DisneyStock/controllers/DashboardController.php"); // siempre dashboard
-```
-
 ---
 
-### ❌ E12 — El botón "Cerrar sesión" no funciona o da error
+### E12 — El botón "Cerrar sesión" no funciona
 
-**Síntoma:** Al hacer clic en cerrar sesión, redirige a una página de error o no destruye la sesión.
-
-**URL correcta del logout:**
-```html
+**URL correcta:**
+```
 /DisneyStock/controllers/AuthController.php?accion=logout
 ```
 
-**CORRECTO en `views/Layouts/sidebar.php`:**
+**El método `logout()` debe:**
 ```php
-<a href="/DisneyStock/controllers/AuthController.php?accion=logout">
-    Cerrar sesión
-</a>
-```
-
-**Verificar también que `AuthController::logout()` destruye correctamente:**
-```php
-public function logout(): void
-{
-    session_unset();   // ← limpiar variables
-    session_destroy(); // ← destruir sesión
-    setcookie('ds_remember_user', '', ['expires' => time() - 3600, 'path' => '/']);
-    header("Location: /DisneyStock/views/usuarios/login.php");
-    exit;
-}
+session_unset();
+session_destroy();
+setcookie('ds_remember_user', '', ['expires' => time() - 3600, 'path' => '/']);
+header("Location: /DisneyStock/views/usuarios/login.php");
+exit;
 ```
 
 ---
@@ -359,62 +279,50 @@ public function logout(): void
 
 ---
 
-### ❌ E13 — Error 403 "Token CSRF inválido" al enviar cualquier formulario
+### E13 — Error 403 "Token CSRF inválido" al enviar formularios
 
-**Síntoma:** Al guardar un producto, registrar venta, etc., aparece el mensaje de error CSRF y la acción no se completa.
-
-**Causa A — Token no está en el formulario:**
+**Causa A — Token no está en la vista:**
 ```php
-// Verificar que la vista tenga dentro del <form>:
+// Dentro de cada <form method="POST">:
 <?php csrfField(); ?>
-// Genera: <input type="hidden" name="csrf_token" value="abc123...">
+// Genera: <input type="hidden" name="csrf_token" value="...">
 ```
 
 **Causa B — `validateCsrf()` se llama antes de `session_start()`:**
 ```php
-// CORRECTO — orden obligatorio:
+// Orden correcto obligatorio:
 session_start();
 require_once __DIR__ . '/../helpers/auth.php';
 // ...
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    validateCsrf(); // sesión ya está activa aquí
+    validateCsrf();  // sesión ya activa aquí
 }
 ```
 
-**Causa C — El campo fue renombrado en el formulario:**
+**Causa C — El campo fue renombrado:**
 ```php
-// CORRECTO — el name debe ser exactamente 'csrf_token':
+// CORRECTO — name debe ser exactamente 'csrf_token':
 <input type="hidden" name="csrf_token" value="...">
 
 // INCORRECTO:
-<input type="hidden" name="token" value="...">      // nombre diferente
-<input type="hidden" name="_csrf" value="...">       // nombre diferente
+<input type="hidden" name="token" value="...">
+<input type="hidden" name="_csrf" value="...">
 ```
 
 ---
 
-### ❌ E14 — Formularios POST sin protección CSRF (tutor eliminó validateCsrf)
+### E14 — Formularios POST sin verificación CSRF
 
-**Síntoma:** No hay error visible, pero los formularios procesan sin verificar el token.
+**Riesgo:** Vulnerabilidad Cross-Site Request Forgery.
 
-**Riesgo:** Vulnerabilidad Cross-Site Request Forgery — permite ataques desde otras páginas.
-
-**Verificar que TODOS los controllers que procesan POST tengan:**
-```php
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    validateCsrf(); // ← obligatorio, primera línea del bloque POST
-    // ...
-}
-```
-
-**Controllers que deben tenerlo:**
-- `AuthController.php` ✓
-- `ProductoController.php` ✓
-- `InventarioController.php` ✓
-- `VentaController.php` ✓
-- `UsuarioController.php` ✓
-- `CategoriaController.php` ✓
-- `ConfiguracionController.php` ✓
+**Controllers que DEBEN tener `validateCsrf()` en su bloque POST:**
+- `AuthController.php`
+- `ProductoController.php`
+- `InventarioController.php`
+- `VentaController.php`
+- `UsuarioController.php`
+- `CategoriaController.php`
+- `ConfiguracionController.php`
 
 ---
 
@@ -422,25 +330,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 ---
 
-### ❌ E15 — Al anular una venta, el stock no se restaura
+### E15 — Al anular una venta el stock no se restaura
 
-**Síntoma:** La venta queda como "anulada" pero `inventario.cantidad_stock` no sube.
+**Causa:** Se eliminó la lógica de restauración en `Venta::anular()`.
 
-**Causa:** La lógica de restauración de stock fue eliminada o modificada en `Venta::anular()`.
-
-**CORRECTO en `models/Venta.php` — método `anular()`:**
+**CORRECTO — debe restaurar por cada item:**
 ```php
-// Debe restaurar stock por cada item
 foreach ($detalles->fetchAll() as $d) {
+    // Devolver stock a inventario
     $this->conn->prepare(
         "UPDATE inventario
          SET cantidad_stock = cantidad_stock + :cant, fecha_actualizacion = CURDATE()
          WHERE id_producto = :pid"
     )->execute([':cant' => $d['cantidad'], ':pid' => $d['id_producto']]);
 
-    // Y registrar el movimiento de entrada
+    // Registrar movimiento de entrada por la anulación
     $this->conn->prepare(
-        "INSERT INTO movimiento_inventario (tipo_movimiento, cantidad, fecha, descripcion, id_producto, id_usuario, id_venta)
+        "INSERT INTO movimiento_inventario
+         (tipo_movimiento, cantidad, fecha, descripcion, id_producto, id_usuario, id_venta)
          VALUES ('entrada', :cant, CURDATE(), :desc, :pid, :uid, :vid)"
     )->execute([...]);
 }
@@ -448,48 +355,45 @@ foreach ($detalles->fetchAll() as $d) {
 
 ---
 
-### ❌ E16 — Las transacciones no hacen rollback al fallar
+### E16 — Datos corruptos al fallar una venta a mitad
 
-**Síntoma:** Al haber un error a mitad de una venta (ej. stock insuficiente en un producto), algunos cambios quedan guardados parcialmente.
+**Síntoma:** Algunos productos se descontaron pero la venta no quedó registrada.
 
 **Causa:** Se eliminó el `try/catch` o el `rollBack()`.
 
-**CORRECTO — estructura obligatoria para ventas y anulaciones:**
+**CORRECTO — estructura obligatoria:**
 ```php
 $this->conn->beginTransaction();
 try {
     // ... todas las operaciones
     $this->conn->commit();
-    return ['ok' => true, ...];
+    return ['ok' => true];
 } catch (Exception $e) {
-    $this->conn->rollBack(); // ← deshace TODO si algo falla
+    $this->conn->rollBack();  // deshace TODO
     return ['ok' => false, 'error' => $e->getMessage()];
 }
 ```
 
 ---
 
-### ❌ E17 — Alertas de stock no se generan ni resuelven
+### E17 — Alertas de stock no se generan ni se resuelven
 
-**Síntoma:** Productos con stock bajo no aparecen en el panel de alertas, o alertas resueltas siguen apareciendo.
-
-**Causa:** La lógica de alertas fue removida de `Inventario::registrar()` o `Venta::crear()`.
-
-**Condición para CREAR alerta:**
+**Condición para CREAR alerta** (en `Inventario::registrar()` y `Venta::crear()`):
 ```php
-// Después de actualizar el stock:
 if ($act['stock_minimo'] > 0 && $act['cantidad_stock'] <= $act['stock_minimo']) {
-    // Crear solo si no hay una activa ya
+    // Solo si no hay una alerta activa ya para este producto
     $ya = $this->conn->prepare(
         "SELECT COUNT(*) FROM alerta WHERE id_producto = :pid AND estado = 'activa'"
     );
-    // Si count = 0, insertar alerta
+    $ya->execute([':pid' => $id_producto]);
+    if (!(int)$ya->fetchColumn()) {
+        // INSERT alerta ...
+    }
 }
 ```
 
-**Condición para RESOLVER alerta:**
+**Condición para RESOLVER alerta** (en entradas y ajustes):
 ```php
-// En entradas y ajustes que suben el stock:
 } elseif (in_array($tipo, ['entrada', 'ajuste'])) {
     $this->conn->prepare(
         "UPDATE alerta SET estado = 'resuelta', fecha_resolucion = CURDATE()
@@ -500,28 +404,22 @@ if ($act['stock_minimo'] > 0 && $act['cantidad_stock'] <= $act['stock_minimo']) 
 
 ---
 
-## Errores visuales y de vistas
+## Errores visuales
 
 ---
 
-### ❌ E18 — Fechas muestran "00:00" o "01/01/1970"
+### E18 — Fechas muestran "00:00" o fecha incorrecta
 
-**Síntoma:** Las columnas de fecha en tablas muestran hora `00:00` o la fecha base de Unix.
+**Causa:** Se agregó `H:i` al formato de fecha, pero las columnas son `DATE` sin hora.
 
-**Causa A — Formato incorrecto con `H:i`:**
+**CORRECTO:**
 ```php
-// INCORRECTO — fecha_venta es DATE, no tiene hora:
-date('d/m/Y H:i', strtotime($v['fecha_venta']))  // muestra 00:00
-
-// CORRECTO:
 date('d/m/Y', strtotime($v['fecha_venta']))
 ```
 
-**Causa B — `strtotime()` falló y retornó `false`:**
+**INCORRECTO:**
 ```php
-// Si la fecha viene vacía o en formato incorrecto:
-$fecha = $v['fecha_venta'] ?? null;
-echo $fecha ? date('d/m/Y', strtotime($fecha)) : '—';
+date('d/m/Y H:i', strtotime($v['fecha_venta']))  // siempre muestra 00:00
 ```
 
 **Archivos donde aplica:**
@@ -533,13 +431,11 @@ echo $fecha ? date('d/m/Y', strtotime($fecha)) : '—';
 
 ---
 
-### ❌ E19 — Modo oscuro no se activa o se activa siempre aunque no se pidió
+### E19 — Modo oscuro no funciona o siempre carga de un modo fijo
 
-**Síntoma:** El toggle de modo oscuro no funciona, o la página siempre carga oscura/clara ignorando la preferencia.
-
-**Causa A — Script de inicialización fue movido debajo del `<body>`:**
-```php
-// CORRECTO — debe estar INMEDIATAMENTE después de <body> en header.php:
+**Causa A — Script de inicialización movido:**
+```html
+<!-- CORRECTO — inmediatamente después de <body> en header.php: -->
 <body>
 <script>
     if (localStorage.getItem('darkMode') === '1') {
@@ -548,16 +444,16 @@ echo $fecha ? date('d/m/Y', strtotime($fecha)) : '—';
 </script>
 ```
 
-**Causa B — `id="darkToggle"` o `id="darkIcon"` duplicados o renombrados:**
+**Causa B — IDs duplicados o renombrados:**
 ```js
-// La función actualizarIcono() busca este ID:
-document.getElementById('darkIcon').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-// Si el ID no existe o está duplicado, da error silencioso
+// La función busca exactamente estos IDs:
+document.getElementById('darkIcon')    // en sidebar.php (topbar)
+document.getElementById('darkToggle')  // botón del toggle
+// No debe haber duplicados en el HTML
 ```
 
-**Causa C — `toggleDark()` fue eliminado de `sidebar.php`:**
+**Causa C — `toggleDark()` eliminado de `sidebar.php`:**
 ```js
-// Debe existir en sidebar.php:
 function toggleDark() {
     const isDark = document.body.classList.toggle('dark');
     localStorage.setItem('darkMode', isDark ? '1' : '0');
@@ -567,141 +463,112 @@ function toggleDark() {
 
 ---
 
-### ❌ E20 — SweetAlert no aparece después de acciones (crear, editar, etc.)
+### E20 — SweetAlert no aparece tras crear/editar/eliminar
 
-**Síntoma:** Se guarda un producto pero no aparece el mensaje de confirmación verde.
-
-**Causa A — `$_SESSION['alert']` no se limpia en `header.php`:**
+**Causa A — La alerta no se guarda en sesión antes de redirigir:**
 ```php
-// CORRECTO en views/Layouts/header.php:
-$_dsAlert = $_SESSION['alert'] ?? null;
-unset($_SESSION['alert']); // ← limpiar para que no se repita
+// CORRECTO — orden obligatorio:
+$_SESSION['alert'] = ['icon' => 'success', 'title' => '...', 'text' => '...'];
+header("Location: /DisneyStock/controllers/ProductoController.php");
+exit;
 ```
 
-**Causa B — El JS de SweetAlert usa el nombre de variable incorrecto:**
+**Causa B — `$_SESSION['alert']` no se limpia en `header.php`:**
 ```php
 // CORRECTO en header.php:
+$_dsAlert = $_SESSION['alert'] ?? null;
+unset($_SESSION['alert']);  // limpiar para que no se repita en próxima carga
+```
+
+**Causa C — Nombre de variable distinto al esperado en el JS:**
+```php
+// El JS en header.php usa $_dsAlert, no $alert ni $alertas
 <?php if ($_dsAlert): ?>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        Swal.fire({
-            icon:  <?= json_encode($_dsAlert['icon']) ?>,
-            title: <?= json_encode($_dsAlert['title']) ?>,
-            text:  <?= json_encode($_dsAlert['text']) ?>,
-        });
+    Swal.fire({
+        icon:  <?= json_encode($_dsAlert['icon']) ?>,
+        title: <?= json_encode($_dsAlert['title']) ?>,
+        text:  <?= json_encode($_dsAlert['text']) ?>,
     });
 </script>
 <?php endif; ?>
 ```
 
-**Causa C — El controller no guarda la alerta antes de redirigir:**
-```php
-// CORRECTO — la alerta va ANTES del header Location:
-$_SESSION['alert'] = ['icon' => 'success', 'title' => 'Listo', 'text' => 'Guardado.'];
-header("Location: /DisneyStock/controllers/ProductoController.php");
-exit;
-```
-
 ---
 
-### ❌ E21 — Categorías no aparecen en el select del modal de productos
+### E21 — Categorías no aparecen en el selector de productos
 
-**Síntoma:** El desplegable de categorías está vacío al crear o editar un producto.
-
-**Causa A — La BD no tiene datos en `categoria`:**
+**Causa A — La tabla está vacía:**
 ```sql
-SELECT COUNT(*) FROM categoria; -- si retorna 0, insertar datos iniciales
+SELECT COUNT(*) FROM categoria;
+-- Si retorna 0, insertar los datos iniciales (ver base-de-datos.md)
 ```
 
 **Causa B — El controller no pasa `$categorias` a la vista:**
 ```php
-// CORRECTO en ProductoController.php (sección GET):
+// CORRECTO en ProductoController.php:
 $modelCategoria = new Categoria($db);
 $categorias     = $modelCategoria->obtenerTodas();
-
-// Luego en la vista se usa:
-foreach ($categorias as $cat): ?>
-    <option value="<?= $cat['id_categoria'] ?>"><?= $cat['nombre_categoria'] ?></option>
-<?php endforeach;
+// La vista usa $categorias en el <select>
 ```
 
-**Causa C — `Categoria::obtenerTodas()` tiene error en el nombre de tabla:**
+**Causa C — Nombre de tabla con mayúscula:**
 ```php
-// CORRECTO — tabla en minúsculas:
-"SELECT id_categoria, nombre_categoria, descripcion FROM categoria ORDER BY nombre_categoria"
+// CORRECTO:
+"SELECT id_categoria, nombre_categoria FROM categoria"
 
-// INCORRECTO:
-"SELECT ... FROM Categoria ..."  // mayúscula (puede fallar en Linux)
+// INCORRECTO (falla en Linux):
+"SELECT id_categoria, nombre_categoria FROM Categoria"
 ```
 
 ---
 
-## Errores de configuración del servidor
+## Errores de servidor
 
 ---
 
-### ❌ E22 — Página en blanco o error 500 al acceder a cualquier módulo
+### E22 — Pantalla en blanco o error 500
 
-**Síntoma:** Pantalla completamente blanca o error de servidor sin mensaje.
-
-**Causa más probable:** Error de PHP no visible porque `display_errors` está apagado.
-
-**Solución temporal — activar errores en desarrollo:**
+**Activar errores para ver qué falla:**
 ```php
 // Agregar al inicio del archivo problemático:
 ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 ```
 
-**O verificar el log de errores de Apache:**
+**O revisar el log de Apache en Laragon:**
 ```
 c:\laragon\logs\apache\error.log
 ```
 
 ---
 
-### ❌ E23 — "No se pudo conectar a la base de datos DisneyStock"
-
-**Síntoma:** Mensaje de error de conexión en cualquier página del sistema.
+### E23 — "No se pudo conectar a la base de datos"
 
 **Verificar `config/database.php`:**
 ```php
 private string $host     = "127.0.0.1";
-private string $port     = "3320";    // ← puerto de Laragon (puede ser 3306)
-private string $db_name  = "disney_stock";  // ← minúsculas
+private string $port     = "3320";        // verificar puerto en Laragon
+private string $db_name  = "disney_stock"; // minúsculas
 private string $username = "root";
 private string $password = "";
 ```
 
 **Errores comunes:**
-- Puerto cambiado a `3306` (si Laragon usa `3320` o viceversa)
-- Nombre de BD con mayúsculas: `Disney_Stock` o `DisneyStock` — debe ser `disney_stock`
-- Laragon no está corriendo MySQL
-
-**Verificar puerto actual de Laragon:**
-```
-Laragon → MySQL → botón derecho → "MySQL Settings" → ver puerto
-```
+- Puerto incorrecto (`3306` vs `3320` según la instalación de Laragon)
+- Nombre de BD con mayúsculas: `Disney_Stock` — debe ser `disney_stock`
+- MySQL de Laragon no está corriendo
 
 ---
 
-### ❌ E24 — Imágenes o CSS no cargan (rutas relativas rotas)
+### E24 — CSS o imágenes no cargan
 
-**Síntoma:** El sidebar carga sin estilos, o los logos no aparecen.
+**Causa:** Rutas relativas rotas o raíz del proyecto cambiada.
 
-**Causa:** Las rutas absolutas fueron cambiadas a relativas, o la raíz del proyecto cambió.
-
-**CORRECTO — todas las rutas usan `/DisneyStock/` como raíz:**
+**CORRECTO — rutas absolutas con `/DisneyStock/` como raíz:**
 ```html
-<!-- CSS -->
 <link rel="stylesheet" href="/DisneyStock/Styles/dashboard.css?v=1.0.1">
-
-<!-- Imágenes -->
 <img src="/DisneyStock/img/BlancoSolo.png" alt="Logo">
-
-<!-- Favicon -->
-<link rel="shortcut icon" href="/DisneyStock/img/LogoSolo.png">
 ```
 
 **INCORRECTO:**
@@ -714,49 +581,50 @@ Laragon → MySQL → botón derecho → "MySQL Settings" → ver puerto
 
 ## Lista de verificación rápida
 
-Ante cualquier cambio del tutor, revisar esta lista antes de buscar el error:
+Ante cualquier modificación del tutor, revisar estos puntos:
 
-### ✅ Base de datos
-- [ ] La columna de contraseña se llama `contrasenia` (con **i**)
-- [ ] El campo `estado` en `usuario` es `VARCHAR` con valores `'activo'`/`'inactivo'`
-- [ ] La tabla `inventario` existe y tiene `cantidad_stock`, `stock_minimo`
-- [ ] La tabla `producto` NO tiene `stock_actual` ni `stock_minimo`
-- [ ] La tabla `venta` tiene `id_usuario`, NO `id_empleado` ni `id_administrador`
-- [ ] Las categorías tienen datos (10 filas mínimo)
+### Base de datos
+- [ ] Columna `contrasenia` (con **i**) en tabla `usuario`
+- [ ] Campo `estado` en `usuario` es VARCHAR con `'activo'`/`'inactivo'`
+- [ ] Tabla `inventario` existe con `cantidad_stock` y `stock_minimo`
+- [ ] Tabla `producto` **no tiene** `stock_actual` ni `stock_minimo`
+- [ ] Tabla `venta` tiene `id_usuario`, no `id_empleado` ni `id_administrador`
+- [ ] Tabla `categoria` tiene datos (al menos las 10 iniciales)
+- [ ] BD fue creada con `disney_stock_estructura.sql`, no con `DisneyStock.sql`
 
-### ✅ Seguridad
-- [ ] `requireAuth()` está en todos los controllers (excepto `AuthController`)
-- [ ] `validateCsrf()` está al inicio del bloque POST en todos los controllers
-- [ ] `csrfField()` está dentro de todos los `<form method="POST">`
-- [ ] Las contraseñas se guardan con `password_hash()` y verifican con `password_verify()`
-- [ ] `session_regenerate_id(true)` está en el login tras autenticar
+### Seguridad
+- [ ] `requireAuth()` presente en todos los controllers (excepto `AuthController`)
+- [ ] `validateCsrf()` al inicio de cada bloque POST
+- [ ] `csrfField()` dentro de todos los `<form method="POST">`
+- [ ] Contraseñas con `password_hash()` y verificadas con `password_verify()`
+- [ ] `session_regenerate_id(true)` en el login
 
-### ✅ Flujo de controllers
+### Flujo de controllers
 - [ ] Todos los POST terminan en `header("Location: ...")` + `exit`
-- [ ] Los empleados son redirigidos a `VentaController`, no al Dashboard
-- [ ] Las acciones de escritura verifican `$rol === 'admin'` antes de ejecutar
+- [ ] Empleados redirigidos a `VentaController`, no al Dashboard
+- [ ] Acciones de escritura verifican `$rol === 'admin'` antes de ejecutar
 
-### ✅ Modelos
+### Modelos
 - [ ] Todos los queries usan prepared statements (`:parametro`, no concatenación)
-- [ ] Las ventas y anulaciones están dentro de `beginTransaction()` / `commit()` / `rollBack()`
-- [ ] El stock se actualiza en `inventario`, no en `producto`
+- [ ] Ventas y anulaciones dentro de `beginTransaction()` / `commit()` / `rollBack()`
+- [ ] Stock actualizado en `inventario`, no en `producto`
 
-### ✅ Vistas
-- [ ] Los formatos de fecha usan `d/m/Y` sin `H:i`
-- [ ] Solo hay un `id="darkToggle"` y un `id="darkIcon"` en todo el HTML
-- [ ] Los links del sidebar apuntan a `/DisneyStock/controllers/NombreController.php`
-- [ ] Las rutas de CSS usan `/DisneyStock/Styles/` con versión fija (no `time()`)
+### Vistas
+- [ ] Fechas con formato `d/m/Y` sin `H:i`
+- [ ] Un solo `id="darkToggle"` y `id="darkIcon"` en todo el HTML
+- [ ] Links del sidebar apuntan a `/DisneyStock/controllers/NombreController.php`
+- [ ] CSS con versión fija (`?v=1.0.1`), no con `time()`
 
-### ✅ Servidor
-- [ ] Laragon está corriendo (Apache + MySQL)
-- [ ] El puerto de MySQL en `config/database.php` coincide con el de Laragon
-- [ ] El nombre de la BD en `config/database.php` es `disney_stock` (minúsculas)
+### Servidor
+- [ ] Laragon corriendo (Apache + MySQL)
+- [ ] Puerto MySQL en `config/database.php` coincide con Laragon
+- [ ] Nombre BD en config es `disney_stock` en minúsculas
 
 ---
 
-## Restaurar desde git
+## Restaurar con Git
 
-Si el código fue modificado y algo deja de funcionar, se puede restaurar cualquier archivo:
+Si el tutor modificó algo y deja de funcionar, se puede restaurar desde el historial:
 
 ```bash
 # Ver qué cambió
@@ -775,7 +643,7 @@ git restore .
 git checkout abc1234 -- controllers/VentaController.php
 ```
 
-> ⚠️ `git restore .` descarta **todos** los cambios no commiteados. Úsarlo con precaución.
+> ⚠️ `git restore .` descarta **todos** los cambios no commiteados. Usar con cuidado.
 
 ---
 
