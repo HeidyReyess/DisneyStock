@@ -1,16 +1,8 @@
 ﻿<?php
-session_start();
+require_once __DIR__ . '/../../helpers/auth.php';
 
-// Solo el admin puede acceder a esta página
-if (empty($_SESSION['usuario']) || ($_SESSION['usuario']['rol'] ?? '') !== 'admin') {
-    $_SESSION['alert'] = [
-        'icon'  => 'error',
-        'title' => 'Acceso denegado',
-        'text'  => 'El registro de usuarios está reservado al administrador.',
-    ];
-    header("Location: login.php");
-    exit;
-}
+// Solo admin puede acceder a esta página
+requireAuth('admin', '/DisneyStock/views/usuarios/login.php');
 
 $alert = $_SESSION['alert'] ?? null;
 unset($_SESSION['alert']);
@@ -30,7 +22,7 @@ unset($_SESSION['alert']);
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- CSS de Registro -->
-    <link rel="stylesheet" href="../../public/registro.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../public/registro.css?v=1.0.1">
 </head>
 <body>
 
