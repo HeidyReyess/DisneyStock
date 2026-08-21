@@ -109,8 +109,8 @@ if ($accion === 'toggle') {
     // Proteccion: no se puede desactivar la propia cuenta
     if ($id && $id !== (int)$_SESSION['usuario']['id']) {
         $u = $model->obtenerPorId($id);
-        // Toggle: si esta activo (1) pasa a 0, si esta inactivo (0) pasa a 1
-        if ($u) $model->cambiarEstado($id, $u['activo'] ? 0 : 1);
+        // Toggle: si esta 'activo' pasa a 'inactivo', y viceversa
+        if ($u) $model->cambiarEstado($id, $u['estado'] === 'activo' ? 'inactivo' : 'activo');
     }
     header("Location: /DisneyStock/controllers/UsuarioController.php"); exit;
 }

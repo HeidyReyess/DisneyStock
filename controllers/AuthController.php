@@ -58,13 +58,15 @@ class AuthController
         session_regenerate_id(true);
 
         // Guardar datos del usuario en sesión
+        // estado reemplaza a activo — ahora es string 'activo'/'inactivo'
         $_SESSION['usuario'] = [
-            'id'               => $user['id'],
-            'nombre'           => trim($user['nombre']),
-            'usuario'          => trim($user['usuario']),
-            'rol'              => $user['rol'],
-            'id_administrador' => $user['id_administrador'] ?? null, // null si es empleado
-            'id_empleado'      => $user['id_empleado']      ?? null, // null si es admin
+            'id'                          => $user['id'],
+            'nombre'                      => trim($user['nombre']),
+            'usuario'                     => trim($user['usuario']),
+            'rol'                         => $user['rol'],
+            'id_administrador'            => $user['id_administrador'] ?? null,
+            'id_empleado'                 => $user['id_empleado']      ?? null,
+            'requiere_cambio_contrasenia' => (bool)($user['requiere_cambio_contrasenia'] ?? false),
         ];
 
         // Los empleados van directo a ventas, los admin al dashboard

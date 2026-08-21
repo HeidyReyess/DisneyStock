@@ -18,9 +18,8 @@ require_once __DIR__ . '/../models/Producto.php';
 $db     = (new Database())->conectar();
 $accion = $_POST['accion'] ?? $_GET['accion'] ?? '';
 
-// IDs del usuario logueado — uno de los dos sera null segun el rol
-$id_adm = $_SESSION['usuario']['id_administrador'] ?? null;
-$id_emp = $_SESSION['usuario']['id_empleado']      ?? null;
+// El id_usuario unifica admin y empleado — ya no hay separacion de roles en venta
+$id_usuario = $_SESSION['usuario']['id'] ?? null;
 
 // ── AJAX: retorna HTML del detalle para inyectar en el modal ──
 // Llamado por fetch() desde ventas.php cuando se presiona el ojo
@@ -57,8 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: /DisneyStock/controllers/VentaController.php"); exit;
         }
 
-        // El modelo ejecuta la transaccion completa y retorna ok + datos de factura
-        $resultado = $model->crear($items, $descuento, $id_adm, $id_emp);
+        // El modelo ejecuta la transaccion completa con id_usuario unico
+        $resultado = $model->crear($items, $descuento, $id_usuario);
         $_SESSION['alert'] = $resultado['ok']
             ? ['icon'=>'success', 'title'=>'Venta registrada', 'text'=>"Factura {$resultado['factura']} por \$" . number_format($resultado['total'], 0, ',', '.')]
             : ['icon'=>'error', 'title'=>'Error al guardar', 'text'=>$resultado['error']];
@@ -72,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: /DisneyStock/controllers/VentaController.php"); exit;
         }
         // El modelo restaura el stock y registra movimientos de entrada
-        $resultado = $model->anular($id, $id_adm);
+        $resultado = $model->anular($id, $id_usuario);
         $_SESSION['alert'] = $resultado['ok']
             ? ['icon'=>'success', 'title'=>'Venta anulada', 'text'=>'La venta fue anulada y el stock fue restaurado.']
             : ['icon'=>'error', 'title'=>'Error', 'text'=>$resultado['error']];
@@ -88,7 +87,7 @@ if ($accion === 'anular') {
     $id = (int)($_GET['id'] ?? 0);
     if ($id && $_SESSION['usuario']['rol'] === 'admin') {
         $model     = new Venta($db);
-        $resultado = $model->anular($id, $id_adm);
+        $resultado = $model->anular($id, $id_usuario);
         $_SESSION['alert'] = $resultado['ok']
             ? ['icon'=>'success', 'title'=>'Venta anulada', 'text'=>'La venta fue anulada y el stock fue restaurado.']
             : ['icon'=>'error', 'title'=>'Error', 'text'=>$resultado['error']];

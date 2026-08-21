@@ -2,12 +2,15 @@
 // ============================================================
 //  DisneyStock — Modelo de Usuario
 //  Archivo: models/Usuario.php
-//  Tablas: Usuario, Administrador, Empleado
+//  BD: disney_stock
+//  Tablas: usuario, administrador, empleado
 //
-//  El sistema usa tres tablas relacionadas:
-//  Usuario (datos base de autenticacion)
-//  Administrador (rol admin, apunta a Usuario)
-//  Empleado (rol empleado, apunta a Usuario)
+//  CAMBIOS respecto a BD anterior:
+//  - contrasena  → contrasenia (con i)
+//  - activo (tinyint) → estado ('activo' | 'inactivo')
+//  - created_at  → fecha_registro
+//  - sin updated_at
+//  - nueva columna: requiere_cambio_contrasenia (tinyint)
 // ============================================================
 
 class Usuario
@@ -19,17 +22,18 @@ class Usuario
         $this->conn = $db;
     }
 
-    // Busca usuario activo por nombre de usuario para el proceso de login
-    // Hace JOIN con Administrador y Empleado para saber el rol
-    // COALESCE en el CASE para manejar usuarios que no esten en ninguna tabla de rol
+    // Busca usuario activo por nombre de usuario para el login
+    // Retorna array con id, nombre, password_hash, rol, id_administrador, id_empleado
+    // o false si no existe o está inactivo
     public function obtenerPorUsuario(string $usuario): array|false
     {
         $stmt = $this->conn->prepare(
             "SELECT u.id_usuario AS id,
                     u.nombre,
                     u.usuario,
-                    u.contrasena AS password_hash,
-                    u.activo,
+                    u.contrasenia AS password_hash,
+                    u.estado,
+                    u.requiere_cambio_contrasenia,
                     CASE
                         WHEN a.id_administrador IS NOT NULL THEN 'admin'
                         WHEN e.id_empleado IS NOT NULL THEN 'empleado'
@@ -37,56 +41,54 @@ class Usuario
                     END AS rol,
                     a.id_administrador,
                     e.id_empleado
-             FROM Usuario u
-             LEFT JOIN Administrador a ON a.id_usuario = u.id_usuario
-             LEFT JOIN Empleado e ON e.id_usuario = u.id_usuario
-             WHERE u.usuario = :usuario AND u.activo = 1
+             FROM usuario u
+             LEFT JOIN administrador a ON a.id_usuario = u.id_usuario
+             LEFT JOIN empleado e ON e.id_usuario = u.id_usuario
+             WHERE u.usuario = :usuario AND u.estado = 'activo'
              LIMIT 1"
         );
         $stmt->execute([':usuario' => $usuario]);
         return $stmt->fetch();
     }
 
-    // Verifica si el nombre de usuario ya esta en uso
-    // Llamado antes de registrar o crear para evitar duplicados
+    // Verifica si el nombre de usuario ya existe — para evitar duplicados
     public function existeUsuario(string $usuario): bool
     {
         $stmt = $this->conn->prepare(
-            "SELECT id_usuario FROM Usuario WHERE usuario = :usuario LIMIT 1"
+            "SELECT id_usuario FROM usuario WHERE usuario = :usuario LIMIT 1"
         );
         $stmt->execute([':usuario' => $usuario]);
         return $stmt->rowCount() > 0;
     }
 
-    // Crea el usuario en dos pasos dentro de una transaccion:
-    // 1. Inserta en Usuario con nombre, usuario y contrasena hasheada
-    // 2. Inserta en Administrador o Empleado segun el rol
-    // Si algo falla hace rollBack y retorna el mensaje de error
+    // Registra un nuevo usuario en dos pasos dentro de una transaccion:
+    // 1. Inserta en usuario con contrasenia hasheada
+    // 2. Inserta en administrador o empleado segun el rol
     public function registrar(array $datos): bool|string
     {
         try {
             $this->conn->beginTransaction();
 
-            // Paso 1: insertar datos base en la tabla Usuario
+            // Paso 1: insertar datos base del usuario
             $stmt = $this->conn->prepare(
-                "INSERT INTO Usuario (nombre, usuario, contrasena)
-                 VALUES (:nombre, :usuario, :contrasena)"
+                "INSERT INTO usuario (nombre, usuario, contrasenia, estado, fecha_registro, requiere_cambio_contrasenia)
+                 VALUES (:nombre, :usuario, :contrasenia, 'activo', CURDATE(), 0)"
             );
             $stmt->execute([
-                ':nombre'     => $datos['nombre'],
-                ':usuario'    => $datos['usuario'],
-                ':contrasena' => $datos['password_hash'], // ya viene hasheada del controlador
+                ':nombre'      => $datos['nombre'],
+                ':usuario'     => $datos['usuario'],
+                ':contrasenia' => $datos['password_hash'], // llega ya hasheada del controlador
             ]);
             $id_usuario = (int)$this->conn->lastInsertId();
 
             // Paso 2: insertar en la tabla de rol correspondiente
             if (($datos['rol'] ?? 'empleado') === 'admin') {
                 $this->conn->prepare(
-                    "INSERT INTO Administrador (id_usuario) VALUES (:id)"
+                    "INSERT INTO administrador (id_usuario) VALUES (:id)"
                 )->execute([':id' => $id_usuario]);
             } else {
                 $this->conn->prepare(
-                    "INSERT INTO Empleado (id_usuario) VALUES (:id)"
+                    "INSERT INTO empleado (id_usuario) VALUES (:id)"
                 )->execute([':id' => $id_usuario]);
             }
 
@@ -101,39 +103,40 @@ class Usuario
     }
 
     // Lista todos los usuarios con su rol calculado por JOIN
-    // Ordenados por fecha de creacion descendente (mas nuevos primero)
+    // Ordenados por fecha_registro descendente
     public function obtenerTodos(): array
     {
         $stmt = $this->conn->query(
             "SELECT u.id_usuario AS id,
                     u.nombre,
                     u.usuario,
-                    u.activo,
-                    u.created_at,
+                    u.estado,
+                    u.fecha_registro AS created_at,
+                    u.requiere_cambio_contrasenia,
                     CASE
                         WHEN a.id_administrador IS NOT NULL THEN 'admin'
                         ELSE 'empleado'
                     END AS rol,
                     a.id_administrador,
                     e.id_empleado
-             FROM Usuario u
-             LEFT JOIN Administrador a ON a.id_usuario = u.id_usuario
-             LEFT JOIN Empleado e ON e.id_usuario = u.id_usuario
-             ORDER BY u.created_at DESC"
+             FROM usuario u
+             LEFT JOIN administrador a ON a.id_usuario = u.id_usuario
+             LEFT JOIN empleado e ON e.id_usuario = u.id_usuario
+             ORDER BY u.fecha_registro DESC"
         );
         return $stmt->fetchAll();
     }
 
-    // Actualiza nombre y usuario — la contrasena solo si viene en $datos
-    // Esto permite editar sin tocar la clave si el admin no escribio una nueva
+    // Actualiza nombre y usuario
+    // Solo actualiza contrasenia si viene en $datos (no cambiar si no se envio)
     public function actualizar(int $id_usuario, array $datos): bool|string
     {
         try {
-            $sql = "UPDATE Usuario SET nombre = :nombre, usuario = :usuario, updated_at = NOW()";
+            $sql = "UPDATE usuario SET nombre = :nombre, usuario = :usuario";
 
-            // Agregar campo de contrasena al UPDATE solo si se envio una nueva
+            // Agregar contrasenia al UPDATE solo si el admin envio una nueva
             if (!empty($datos['password_hash'])) {
-                $sql .= ", contrasena = :contrasena";
+                $sql .= ", contrasenia = :contrasenia";
             }
             $sql .= " WHERE id_usuario = :id";
 
@@ -143,7 +146,7 @@ class Usuario
                 ':id'      => $id_usuario,
             ];
             if (!empty($datos['password_hash'])) {
-                $params[':contrasena'] = $datos['password_hash'];
+                $params[':contrasenia'] = $datos['password_hash'];
             }
 
             $this->conn->prepare($sql)->execute($params);
@@ -155,20 +158,20 @@ class Usuario
         }
     }
 
-    // Activa (1) o desactiva (0) un usuario por ID
-    // El controlador evita que un admin se desactive a si mismo
-    public function cambiarEstado(int $id_usuario, int $activo): void
+    // Activa ('activo') o desactiva ('inactivo') un usuario
+    // El controlador evita que el admin se desactive a si mismo
+    public function cambiarEstado(int $id_usuario, string $estado): void
     {
         $this->conn->prepare(
-            "UPDATE Usuario SET activo = :activo WHERE id_usuario = :id"
-        )->execute([':activo' => $activo, ':id' => $id_usuario]);
+            "UPDATE usuario SET estado = :estado WHERE id_usuario = :id"
+        )->execute([':estado' => $estado, ':id' => $id_usuario]);
     }
 
-    // Busca un usuario por ID — usado para leer el estado actual antes del toggle
+    // Busca usuario por ID — usado para leer el estado antes del toggle
     public function obtenerPorId(int $id): array|false
     {
         $stmt = $this->conn->prepare(
-            "SELECT id_usuario AS id, nombre, usuario, activo FROM Usuario WHERE id_usuario = :id LIMIT 1"
+            "SELECT id_usuario AS id, nombre, usuario, estado FROM usuario WHERE id_usuario = :id LIMIT 1"
         );
         $stmt->execute([':id' => $id]);
         return $stmt->fetch();

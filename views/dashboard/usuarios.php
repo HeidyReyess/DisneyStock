@@ -69,8 +69,9 @@ $rolColors = [
                 </span>
             </td>
             <td style="padding:14px 16px;text-align:center;">
-                <span style="background:<?= $u['activo'] ? '#D1FAE5' : '#FEE2E2' ?>;color:<?= $u['activo'] ? '#065F46' : '#991B1B' ?>;padding:4px 12px;border-radius:20px;font-size:0.78rem;font-weight:600;">
-                    <?= $u['activo'] ? 'Activo' : 'Inactivo' ?>
+                <!-- Badge verde si activo, rojo si inactivo -->
+                <span style="background:<?= $u['estado']==='activo' ? '#D1FAE5' : '#FEE2E2' ?>;color:<?= $u['estado']==='activo' ? '#065F46' : '#991B1B' ?>;padding:4px 12px;border-radius:20px;font-size:0.78rem;font-weight:600;">
+                    <?= $u['estado'] === 'activo' ? 'Activo' : 'Inactivo' ?>
                 </span>
             </td>
             <td style="padding:14px 16px;color:#6B7280;font-size:0.82rem;"><?= date('d/m/Y', strtotime($u['created_at'])) ?></td>
@@ -81,9 +82,9 @@ $rolColors = [
                 </button>
                 <?php if (!$esMiCuenta): ?>
                 <!-- Botón activar/desactivar — no aparece en la propia cuenta -->
-                <button onclick="toggleUsuario('<?= $u['id'] ?>',<?= $u['activo'] ?>,'<?= htmlspecialchars($u['nombre'],ENT_QUOTES) ?>')"
-                        style="background:<?= $u['activo'] ? '#FEF3C7' : '#D1FAE5' ?>;color:<?= $u['activo'] ? '#92400E' : '#065F46' ?>;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-weight:600;">
-                    <i class="fas fa-<?= $u['activo'] ? 'ban' : 'check' ?>"></i>
+                <button onclick="toggleUsuario('<?= $u['id'] ?>','<?= $u['estado'] ?>','<?= htmlspecialchars($u['nombre'],ENT_QUOTES) ?>')"
+                        style="background:<?= $u['estado']==='activo' ? '#FEF3C7' : '#D1FAE5' ?>;color:<?= $u['estado']==='activo' ? '#92400E' : '#065F46' ?>;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-weight:600;">
+                    <i class="fas fa-<?= $u['estado']==='activo' ? 'ban' : 'check' ?>"></i>
                 </button>
                 <?php endif; ?>
             </td>
@@ -175,8 +176,8 @@ function cerrarModal() {
 }
 
 // Confirmación antes de activar o desactivar un usuario
-function toggleUsuario(id, activo, nombre) {
-    const accion = activo ? 'desactivar' : 'activar';
+function toggleUsuario(id, estado, nombre) {
+    const accion = estado === 'activo' ? 'desactivar' : 'activar';
     Swal.fire({
         title: '\u00bf' + accion.charAt(0).toUpperCase() + accion.slice(1) + ' usuario?',
         text: nombre,

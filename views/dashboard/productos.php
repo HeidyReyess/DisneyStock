@@ -57,7 +57,6 @@ require_once __DIR__ . '/../../helpers/auth.php';
     <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
         <thead style="background:#F5F3FF;border-bottom:2px solid #DDD6FE;">
             <tr>
-                <th style="padding:12px 16px;text-align:left;color:#6B7280;font-weight:600;">Img</th>
                 <th style="padding:12px 16px;text-align:left;color:#6B7280;font-weight:600;">ID</th>
                 <th style="padding:12px 16px;text-align:left;color:#6B7280;font-weight:600;">Nombre</th>
                 <th style="padding:12px 16px;text-align:left;color:#6B7280;font-weight:600;">Categor&#237;a</th>
@@ -71,22 +70,6 @@ require_once __DIR__ . '/../../helpers/auth.php';
         <tbody>
         <?php foreach ($productos as $p): ?>
         <tr style="border-bottom:1px solid #F3F0FF;" onmouseover="this.style.background='#F5F3FF'" onmouseout="this.style.background=''">
-            <!-- Thumbnail imagen -->
-            <td style="padding:8px 16px;">
-                <?php if (!empty($p['imagen'])): ?>
-                <img src="/DisneyStock/public/uploads/productos/<?= htmlspecialchars($p['imagen']) ?>"
-                     alt="<?= htmlspecialchars($p['nombre']) ?>"
-                     onclick="verImagen('/DisneyStock/public/uploads/productos/<?= htmlspecialchars($p['imagen']) ?>', '<?= htmlspecialchars(addslashes($p['nombre'])) ?>')"
-                     style="width:48px;height:48px;object-fit:cover;border-radius:8px;cursor:zoom-in;border:2px solid #DDD6FE;transition:transform 0.2s;"
-                     onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-                <?php else: ?>
-                <div onclick='editarProducto(<?= json_encode($p) ?>)'
-                     style="width:48px;height:48px;background:#F3F0FF;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px dashed #DDD6FE;"
-                     title="Agregar imagen">
-                    <i class="fas fa-image" style="color:#C4B5FD;font-size:1.1rem;"></i>
-                </div>
-                <?php endif; ?>
-            </td>
             <td style="padding:12px 16px;font-family:monospace;color:#7C3AED;font-weight:600;">#<?= $p['id_producto'] ?></td>
             <td style="padding:12px 16px;font-weight:600;color:#4A1D96;">
                 <?= htmlspecialchars($p['nombre']) ?>
@@ -149,7 +132,7 @@ require_once __DIR__ . '/../../helpers/auth.php';
             <h2 id="modalTituloP" style="font-size:1.2rem;font-weight:800;color:#4A1D96;font-family:'Outfit',sans-serif;">Nuevo Producto</h2>
             <button onclick="cerrarModal('modalProducto')" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#94A3B8;">&times;</button>
         </div>
-        <form method="POST" action="/DisneyStock/controllers/ProductoController.php" enctype="multipart/form-data">
+        <form method="POST" action="/DisneyStock/controllers/ProductoController.php">
             <input type="hidden" name="accion" id="accionP" value="crear">
             <input type="hidden" name="id" id="pId">
             <?php csrfField(); ?>
@@ -157,21 +140,6 @@ require_once __DIR__ . '/../../helpers/auth.php';
                 <div style="grid-column:1/-1;">
                     <label style="font-size:0.85rem;font-weight:600;color:#334155;display:block;margin-bottom:6px;">Nombre *</label>
                     <input type="text" name="nombre" id="pNombre" required maxlength="255" style="width:100%;padding:10px 14px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:0.9rem;outline:none;box-sizing:border-box;">
-                </div>
-                <div style="grid-column:1/-1;">
-                    <label style="font-size:0.85rem;font-weight:600;color:#334155;display:block;margin-bottom:6px;">Imagen del producto</label>
-                    <div id="imagenPreviewContainer" style="display:none;margin-bottom:8px;">
-                        <img id="imagenPreviewActual" src="" alt="Imagen actual"
-                             style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #DDD6FE;">
-                        <span style="font-size:0.78rem;color:#6B7280;display:block;margin-top:4px;">Imagen actual (sube una nueva para reemplazar)</span>
-                    </div>
-                    <label for="imagenInput" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px dashed #DDD6FE;border-radius:8px;cursor:pointer;background:#F5F3FF;"
-                           onmouseover="this.style.borderColor='#7C3AED'" onmouseout="this.style.borderColor='#DDD6FE'">
-                        <i class="fas fa-cloud-upload-alt" style="color:#7C3AED;font-size:1.2rem;"></i>
-                        <span id="imagenLabel" style="color:#6B7280;font-size:0.88rem;">Seleccionar imagen (JPG, PNG, WEBP &mdash; m&#225;x. 3 MB)</span>
-                    </label>
-                    <input type="file" name="imagen" id="imagenInput" accept="image/jpeg,image/png,image/webp,image/gif"
-                           style="display:none;" onchange="previsualizarImagen(this)">
                 </div>
                 <div>
                     <label style="font-size:0.85rem;font-weight:600;color:#334155;display:block;margin-bottom:6px;">Categor&#237;a</label>
@@ -244,29 +212,6 @@ require_once __DIR__ . '/../../helpers/auth.php';
 </div>
 
 <script>
-function verImagen(src, nombre) {
-    document.getElementById('imgPreview').src = src;
-    document.getElementById('imgNombre').textContent = nombre;
-    document.getElementById('modalImagen').style.display = 'flex';
-}
-function resetImagenModal() {
-    document.getElementById('imagenInput').value = '';
-    document.getElementById('imagenLabel').textContent = 'Seleccionar imagen (JPG, PNG, WEBP \u2014 m\u00e1x. 3 MB)';
-    document.getElementById('imagenPreviewContainer').style.display = 'none';
-    document.getElementById('imagenPreviewActual').src = '';
-}
-function previsualizarImagen(input) {
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        document.getElementById('imagenLabel').textContent = file.name;
-        const reader = new FileReader();
-        reader.onload = e => {
-            document.getElementById('imagenPreviewActual').src = e.target.result;
-            document.getElementById('imagenPreviewContainer').style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-    }
-}
 function abrirModal() {
     document.getElementById('modalTituloP').textContent = 'Nuevo Producto';
     document.getElementById('accionP').value = 'crear';
@@ -278,7 +223,6 @@ function abrirModal() {
     document.getElementById('pMinimo').value = 0;
     document.getElementById('pFecha').value = '<?= date('Y-m-d') ?>';
     document.getElementById('pCategoria').value = '';
-    resetImagenModal();
     document.getElementById('modalProducto').style.display = 'flex';
 }
 function editarProducto(p) {
@@ -293,11 +237,6 @@ function editarProducto(p) {
     document.getElementById('pMinimo').value    = p.stock_minimo || 0;
     document.getElementById('pFecha').value     = p.fecha_ingreso || '<?= date('Y-m-d') ?>';
     document.getElementById('pCategoria').value = p.id_categoria || '';
-    resetImagenModal();
-    if (p.imagen) {
-        document.getElementById('imagenPreviewActual').src = '/DisneyStock/public/uploads/productos/' + p.imagen;
-        document.getElementById('imagenPreviewContainer').style.display = 'block';
-    }
     document.getElementById('modalProducto').style.display = 'flex';
 }
 function abrirModalCat() { document.getElementById('modalCat').style.display = 'flex'; }

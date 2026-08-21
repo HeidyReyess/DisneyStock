@@ -20,8 +20,8 @@ $db     = (new Database())->conectar();
 $accion = $_POST['accion'] ?? $_GET['accion'] ?? '';
 $rol    = $_SESSION['usuario']['rol'];
 
-// ID del admin logueado para registrar quien hizo el movimiento
-$id_adm = $_SESSION['usuario']['id_administrador'] ?? null;
+// id_usuario unifica admin y empleado para movimientos de inventario
+$id_usuario = $_SESSION['usuario']['id'] ?? null;
 
 // ── POST: registrar movimiento manual de stock ────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -50,9 +50,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: /DisneyStock/controllers/InventarioController.php"); exit;
         }
 
-        // El modelo registra el movimiento, actualiza stock y gestiona alertas
+        // El modelo registra el movimiento, actualiza inventario y gestiona alertas
         $model     = new Inventario($db);
-        $resultado = $model->registrar($id_producto, $tipo, $cantidad, $descripcion, $id_adm);
+        $resultado = $model->registrar($id_producto, $tipo, $cantidad, $descripcion, $id_usuario);
 
         // Mostrar resultado al usuario
         $_SESSION['alert'] = $resultado['ok']
