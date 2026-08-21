@@ -330,26 +330,33 @@ function requireAuth(?string $rolRequerido = null, string $redireccion = '...'):
 }
 
 // ── controllers/ProductoController.php — función local ───
-// Retorna: string (nombre archivo) | false (error) | null (no se subio imagen)
-function procesarImagen(array $file, ?string $imagenActual = null): string|false|null
+// Retorna: string (nombre archivo) | null (no se subio imagen) | lanza Exception en error
+function procesarImagen(string $key, ?string $imagenActual = null): ?string
 {
-    if (empty($file['name'])) return null; // no se adjuntó imagen
+    if (empty($_FILES[$key]['name'])) return $imagenActual; // sin imagen nueva, mantener actual
 
-    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    if (!in_array($ext, ['jpg','jpeg','png','webp','gif'])) {
-        $_SESSION['alert'] = ['icon'=>'warning', ...];
-        return false; // error: formato no permitido
-    }
+    $archivo = $_FILES[$key];
+    if ($archivo['error'] !== UPLOAD_ERR_OK) throw new Exception('Error al subir la imagen.');
 
-    $nombreFinal = uniqid('prod_', true) . '.' . $ext; // nombre único
-    move_uploaded_file($file['tmp_name'], $carpeta . $nombreFinal);
+    // Validar tipo MIME real (no confiar solo en la extensión)
+    $tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime  = finfo_file($finfo, $archivo['tmp_name']);
+    finfo_close($finfo);
+    if (!in_array($mime, $tiposPermitidos)) throw new Exception('Tipo no permitido. Usa JPG, PNG, WEBP o GIF.');
 
-    // Borrar imagen anterior si existía
-    if ($imagenActual && file_exists($carpeta . $imagenActual)) {
-        unlink($carpeta . $imagenActual);
-    }
+    if ($archivo['size'] > 2 * 1024 * 1024) throw new Exception('La imagen no puede superar 2MB.');
 
-    return $nombreFinal; // éxito
+    $ext     = match($mime) { 'image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','image/gif'=>'gif' };
+    $nombre  = 'prod_' . uniqid() . '.' . $ext;
+    $carpeta = __DIR__ . '/../public/uploads/productos/';
+    if (!is_dir($carpeta)) mkdir($carpeta, 0755, true);
+    move_uploaded_file($archivo['tmp_name'], $carpeta . $nombre);
+
+    // Borrar imagen anterior para no acumular archivos huérfanos
+    if ($imagenActual && file_exists($carpeta . $imagenActual)) unlink($carpeta . $imagenActual);
+
+    return $nombre;
 }
 ```
 
@@ -667,6 +674,7 @@ DisneyStock está organizado en **módulos funcionales**. Cada módulo agrupa un
 | **Usuarios** | `UsuarioController.php` | `Usuario.php` | `views/dashboard/usuarios.php` |
 | **Categorias** | `CategoriaController.php` | `Categoria.php` | *(modal dentro de productos)* |
 | **Configuracion** | `ConfiguracionController.php` | — | `views/dashboard/configuracion.php` |
+| **Informacion** | `InformacionController.php` | — | `views/dashboard/informacion.php` |
 
 ### Estructura completa de carpetas
 
@@ -994,11 +1002,12 @@ $stmt->execute([':usuario' => $usuario]);
 ### Tablas del sistema
 
 ```sql
-Usuario          ← datos base de autenticación (nombre, usuario, contrasena)
+Usuario          ← datos base de autenticación (nombre, usuario, contrasenia)
 Administrador    ← extiende Usuario con rol admin
 Empleado         ← extiende Usuario con rol empleado
 Categoria        ← categorías de productos
-Producto         ← catálogo con precio, stock, imagen
+Producto         ← catálogo con precio, imagen (opcional), proveedor
+Inventario       ← stock actual y mínimo por producto (tabla separada)
 Alerta           ← alertas de stock bajo (activa / resuelta)
 Venta            ← cabecera de cada venta (total, estado, fecha)
 Detalle_Venta    ← ítems de cada venta (precio × cantidad)

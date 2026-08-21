@@ -579,6 +579,64 @@ private string $password = "";
 
 ---
 
+### E25 — Imagen de producto no se guarda o da error al subir
+
+**Síntoma:** Al crear o editar un producto con imagen, el formulario no sube el archivo.
+
+**Causa A — Falta `enctype` en el formulario:**
+```html
+<!-- CORRECTO — obligatorio para enviar archivos: -->
+<form method="POST" action="..." enctype="multipart/form-data">
+
+<!-- INCORRECTO — sin enctype, $_FILES llega vacío: -->
+<form method="POST" action="...">
+```
+
+**Causa B — El campo de imagen tiene un `name` distinto:**
+```html
+<!-- CORRECTO: -->
+<input type="file" name="imagen" ...>
+
+<!-- INCORRECTO: -->
+<input type="file" name="foto" ...>    <!-- no coincide con procesarImagen('imagen') -->
+<input type="file" name="archivo" ...>
+```
+
+**Causa C — La carpeta de destino no existe o no tiene permisos:**
+```
+public/uploads/productos/   ← debe existir y ser escribible
+```
+El controller la crea automáticamente con `mkdir()` si no existe. Si da error de permisos en Linux:
+```bash
+chmod 755 public/uploads/productos/
+```
+
+**Causa D — El archivo supera el límite de PHP:**
+```ini
+; php.ini — estos valores deben ser mayores a 2MB:
+upload_max_filesize = 10M
+post_max_size = 12M
+```
+
+**Verificar que la imagen se muestra en la tabla:**
+```php
+// CORRECTO en la vista — ruta completa al archivo:
+'/DisneyStock/public/uploads/productos/' . $p['imagen']
+
+// Si $p['imagen'] es NULL, el placeholder gris aparece automáticamente
+```
+
+---
+
+### Lista de verificación — imágenes de productos
+- [ ] Formulario tiene `enctype="multipart/form-data"`
+- [ ] Campo de file tiene `name="imagen"`
+- [ ] Carpeta `public/uploads/productos/` existe
+- [ ] `php.ini`: `upload_max_filesize >= 2M` y `post_max_size >= 3M`
+- [ ] Columna `imagen VARCHAR(255)` existe en tabla `producto`
+
+---
+
 ## Lista de verificación rápida
 
 Ante cualquier modificación del tutor, revisar estos puntos:
@@ -588,6 +646,7 @@ Ante cualquier modificación del tutor, revisar estos puntos:
 - [ ] Campo `estado` en `usuario` es VARCHAR con `'activo'`/`'inactivo'`
 - [ ] Tabla `inventario` existe con `cantidad_stock` y `stock_minimo`
 - [ ] Tabla `producto` **no tiene** `stock_actual` ni `stock_minimo`
+- [ ] Tabla `producto` **tiene** columna `imagen VARCHAR(255)` (puede ser NULL)
 - [ ] Tabla `venta` tiene `id_usuario`, no `id_empleado` ni `id_administrador`
 - [ ] Tabla `categoria` tiene datos (al menos las 10 iniciales)
 - [ ] BD fue creada con `disney_stock_estructura.sql`, no con `DisneyStock.sql`

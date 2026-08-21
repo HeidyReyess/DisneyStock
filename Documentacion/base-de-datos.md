@@ -148,6 +148,7 @@ Catálogo de productos. **No contiene stock** — ese dato está en `inventario`
 | `fecha_ingreso` | DATE | SÍ | Fecha de ingreso al catálogo |
 | `estado` | VARCHAR(20) | SÍ | `'activo'` o `'inactivo'` |
 | `proveedor` | VARCHAR(100) | SÍ | Nombre del proveedor (opcional) |
+| `imagen` | VARCHAR(255) | SÍ | Nombre del archivo en `public/uploads/productos/` (opcional) |
 | `id_categoria` | INT(11) | SÍ | FK → `categoria.id_categoria` |
 
 > ⚠️ Esta tabla **NO tiene** `stock_actual` ni `stock_minimo`. Están en `inventario`.

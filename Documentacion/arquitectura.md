@@ -98,7 +98,7 @@ DisneyStock/
 │   ├── login.css                 ← Estilos del formulario de login
 │   ├── registro.css              ← Estilos del formulario de registro
 │   ├── style.css                 ← Estilos de la landing page
-│   └── uploads/productos/        ← Reservado para futuras imágenes de productos
+│   └── uploads/productos/        ← Imágenes de productos (JPG, PNG, WEBP, GIF — máx. 2MB)
 │
 ├── Styles/
 │   ├── dashboard.css             ← Estilos generales del dashboard
