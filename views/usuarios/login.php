@@ -49,6 +49,11 @@ $checkboxMarcado  = $usuarioRecordado !== '';
         <div class="login-form-wrapper">
             <div class="login-card">
 
+                <!-- Botón volver al inicio -->
+                <a href="/DisneyStock/public/index.php" style="display:inline-flex; align-items:center; gap:6px; font-size:0.82rem; color:#7C3AED; font-weight:600; text-decoration:none; margin-bottom:20px;">
+                    <i class="fas fa-arrow-left"></i> Volver al inicio
+                </a>
+
                 <!-- Encabezado -->
                 <div class="login-header">
                     <h1>Bienvenido</h1>
