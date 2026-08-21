@@ -83,59 +83,66 @@ $rol    = $_SESSION['usuario']['rol'];
             --scrollbar-track:#0F1117;
         }
 
+        /* ============================================================
+           MODO OSCURO — reglas limpias sin conflictos
+           ============================================================ */
         body.dark { background: var(--bg-main); color: var(--text-primary); }
         body.dark > div { background: var(--bg-main) !important; }
-
-        /* main content area */
-        body.dark main { background: var(--bg-main) !important; }
+        body.dark main  { background: var(--bg-main) !important; }
         body.dark section { background: var(--bg-main) !important; }
 
-        /* cards y tablas */
-        body.dark .card,
+        /* Todos los fondos blancos se vuelven card oscura */
         body.dark [style*="background:#fff"],
         body.dark [style*="background: #fff"],
         body.dark [style*="background:#ffffff"],
         body.dark [style*="background: #ffffff"] {
             background: var(--bg-card) !important;
             border-color: var(--border-color) !important;
-            color: var(--text-primary) !important;
         }
 
-        /* thead */
+        /* Fondo morado muy claro → table head oscuro */
         body.dark [style*="background:#F5F3FF"],
         body.dark [style*="background: #F5F3FF"],
         body.dark [style*="background:#F3F0FF"],
-        body.dark [style*="background: #F3F0FF"] {
+        body.dark [style*="background: #F3F0FF"],
+        body.dark [style*="background:#FAF9FF"],
+        body.dark [style*="background: #FAF9FF"] {
             background: var(--bg-table-head) !important;
         }
 
-        /* textos — forzar legibilidad */
-        body.dark td, body.dark th,
-        body.dark span:not(.badge):not([style*="background"]),
-        body.dark div:not([style*="background:#4A"]):not([style*="background:#7C"]):not([style*="background:#059"]):not([style*="background:#D1FA"]):not([style*="background:#FEF"]):not([style*="background:#EDE"]):not([style*="background:#FEE"]) {
-            color: var(--text-primary);
+        /* Textos oscuros → claros */
+        body.dark td, body.dark th { color: var(--text-primary) !important; }
+        body.dark h1, body.dark h2, body.dark h3, body.dark h4 { color: var(--text-primary) !important; }
+        body.dark [style*="color:#1E1B4B"], body.dark [style*="color: #1E1B4B"] { color: var(--text-primary) !important; }
+        body.dark [style*="color:#334155"], body.dark [style*="color: #334155"] { color: var(--text-primary) !important; }
+        body.dark [style*="color:#4A1D96"], body.dark [style*="color: #4A1D96"] { color: #C4B5FD !important; }
+        body.dark [style*="color:#6B7280"], body.dark [style*="color: #6B7280"] { color: var(--text-secondary) !important; }
+        body.dark [style*="color:#94A3B8"], body.dark [style*="color: #94A3B8"] { color: var(--text-muted) !important; }
+        body.dark [style*="color:#7C3AED"], body.dark [style*="color: #7C3AED"] { color: #A78BFA !important; }
+        body.dark [style*="color:#059669"], body.dark [style*="color: #059669"] { color: #34D399 !important; }
+        body.dark p { color: var(--text-secondary) !important; }
+
+        /* Bordes claros → oscuros */
+        body.dark [style*="border:1px solid #DDD6FE"],
+        body.dark [style*="border: 1px solid #DDD6FE"],
+        body.dark [style*="border-bottom:1px solid #DDD6FE"],
+        body.dark [style*="border-bottom:2px solid #DDD6FE"],
+        body.dark [style*="border-bottom:1px solid #F3F0FF"] {
+            border-color: var(--border-color) !important;
         }
 
-        body.dark [style*="color:#334155"],
-        body.dark [style*="color: #334155"],
-        body.dark [style*="color:#1E1B4B"],
-        body.dark [style*="color: #1E1B4B"],
-        body.dark [style*="color:#4A1D96"],
-        body.dark [style*="color: #4A1D96"] {
-            color: var(--text-primary) !important;
-        }
-        body.dark [style*="color:#6B7280"],
-        body.dark [style*="color: #6B7280"],
-        body.dark [style*="color:#94A3B8"],
-        body.dark [style*="color: #94A3B8"] {
-            color: var(--text-secondary) !important;
-        }
-        /* Precios verdes — mantener */
-        body.dark [style*="color:#059669"] { color: #34D399 !important; }
-        /* IDs morados — aclarar */
-        body.dark [style*="color:#7C3AED"] { color: #A78BFA !important; }
+        /* Hover de filas */
+        body.dark tbody tr:hover { background: var(--bg-row-hover) !important; }
 
-        /* inputs y selects */
+        /* Badges de estado — fondo adaptado */
+        body.dark [style*="background:#D1FAE5"] { background: #064e3b !important; color: #6ee7b7 !important; }
+        body.dark [style*="background:#FEE2E2"] { background: #450a0a !important; color: #fca5a5 !important; }
+        body.dark [style*="background:#FEF3C7"] { background: #422006 !important; color: #fcd34d !important; }
+        body.dark [style*="background:#FFFBEB"] { background: #1c1408 !important; }
+        body.dark [style*="background:#EDE9FE"] { background: #2e1065 !important; color: #c4b5fd !important; }
+        body.dark [style*="background:#DBEAFE"] { background: #172554 !important; color: #93c5fd !important; }
+
+        /* Inputs, selects, textareas */
         body.dark input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
         body.dark select,
         body.dark textarea {
@@ -144,8 +151,7 @@ $rol    = $_SESSION['usuario']['rol'];
             color: var(--text-primary) !important;
         }
 
-        /* modales */
-        body.dark .modal-box,
+        /* Modales */
         body.dark [id*="modal"] > div {
             background: var(--modal-bg) !important;
             border-color: var(--border-color) !important;
@@ -153,110 +159,31 @@ $rol    = $_SESSION['usuario']['rol'];
         }
         body.dark [id*="modal"] label { color: var(--text-primary) !important; }
 
-        /* headings */
-        body.dark h1, body.dark h2, body.dark h3, body.dark h4 {
-            color: var(--text-primary) !important;
-        }
-        body.dark p { color: var(--text-secondary) !important; }
-
-        /* Bordes de tabla */
-        body.dark [style*="border-bottom:1px solid #F3F0FF"],
-        body.dark [style*="border-bottom: 1px solid #F3F0FF"],
-        body.dark [style*="border:1px solid #DDD6FE"],
-        body.dark [style*="border: 1px solid #DDD6FE"] {
-            border-color: var(--border-color) !important;
-        }
-
-        /* scrollbar oscuro */
-        body.dark ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
-        body.dark ::-webkit-scrollbar-thumb { background: #4B5563; }
-        body.dark ::-webkit-scrollbar-thumb:hover { background: #6B7280; }
-
-        /* Cards con borde sutil en modo oscuro */
-        body.dark .card,
-        body.dark [style*="background:#fff"],
-        body.dark [style*="background: #fff"],
-        body.dark [style*="background:#ffffff"],
-        body.dark [style*="background: #ffffff"] {
-            box-shadow: none !important;
-            border: 1px solid rgba(255,255,255,0.08) !important;
-        }
-
-        /* botón dark mode — funciona en topbar */
-        #darkToggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 34px;
-            height: 34px;
-            flex-shrink: 0;
-            border-radius: 8px;
-            border: 1.5px solid #DDD6FE;
-            cursor: pointer;
-            font-size: 0.9rem;
-            background: #F5F3FF;
-            color: #4A1D96;
-            transition: all 0.2s ease;
-        }
-        #darkToggle:hover {
-            background: #EDE9FE;
-            border-color: #7C3AED;
-            transform: scale(1.05);
-        }
-        /* ── Modo oscuro: textos inline en tablas y filas ── */
-        body.dark td,
-        body.dark td * {
-            color: var(--text-primary) !important;
-        }
-        body.dark tr:hover td {
-            background: var(--bg-row-hover) !important;
-        }
-        /* Mantener colores de estado (badges) */
-        body.dark [style*="background:#D1FAE5"] { background:#064e3b !important; color:#6ee7b7 !important; }
-        body.dark [style*="background:#FEE2E2"] { background:#450a0a !important; color:#fca5a5 !important; }
-        body.dark [style*="background:#FEF3C7"] { background:#431407 !important; color:#fcd34d !important; }
-        body.dark [style*="background:#EDE9FE"] { background:#2e1065 !important; color:#c4b5fd !important; }
-
-        /* ── Topbar modo oscuro ── */
+        /* Topbar */
         body.dark #topbar {
             background: var(--bg-card) !important;
             border-bottom-color: var(--border-color) !important;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.4) !important;
         }
-        body.dark #topbar .topbar-nombre {
-            color: var(--text-primary) !important;
-        }
-        body.dark #topbar .topbar-rol {
-            color: #A78BFA !important;
-        }
-        body.dark #topbar .topbar-avatar {
-            background: #2A2F45 !important;
-            color: #A78BFA !important;
-        }
-        body.dark #topbar .topbar-sep {
-            background: var(--border-color) !important;
-        }
-        body.dark #topbar .topbar-logout {
-            background: rgba(220,38,38,0.15) !important;
-            color: #FCA5A5 !important;
-        }
-        body.dark #topbar .topbar-logout:hover {
-            background: rgba(220,38,38,0.25) !important;
-        }
+        body.dark .topbar-nombre { color: var(--text-primary) !important; }
+        body.dark .topbar-rol    { color: #A78BFA !important; }
+        body.dark .topbar-avatar { background: #2A2F45 !important; color: #A78BFA !important; }
+        body.dark .topbar-sep    { background: var(--border-color) !important; }
+        body.dark .topbar-logout { background: rgba(220,38,38,0.2) !important; color: #FCA5A5 !important; }
+        body.dark .topbar-logout:hover { background: rgba(220,38,38,0.35) !important; }
 
-        /* Modo oscuro: darkToggle */
+        /* Boton dark mode */
         body.dark #darkToggle {
             background: #1E2235 !important;
             border-color: #2A2F45 !important;
             color: #A78BFA !important;
         }
-        body.dark #darkToggle:hover {
-            background: #242840 !important;
-        }
+        body.dark #darkToggle:hover { background: #242840 !important; }
 
-        /* Filas de tabla en modo oscuro */
-        body.dark tbody tr:hover {
-            background: var(--bg-row-hover) !important;
-        }
+        /* Scrollbar */
+        body.dark ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+        body.dark ::-webkit-scrollbar-thumb { background: #4B5563; }
+        body.dark ::-webkit-scrollbar-thumb:hover { background: #6B7280; }
     </style>
 </head>
 <body>

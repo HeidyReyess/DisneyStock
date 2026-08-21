@@ -1,7 +1,7 @@
 ﻿<?php
 session_start();
 if (!isset($_SESSION['usuario'])) { header("Location: /DisneyStock/views/usuarios/login.php"); exit; }
-if ($_SESSION['usuario']['rol'] !== 'admin') { header("Location: admin.php"); exit; }
+if ($_SESSION['usuario']['rol'] !== 'admin') { header("Location: /DisneyStock/controllers/DashboardController.php"); exit; }
 
 // Procesar guardado de configuración
 $guardado = false;
