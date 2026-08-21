@@ -64,29 +64,26 @@ if (!function_exists('navLink')) {
         <a href="/DisneyStock/controllers/UsuarioController.php" class="<?= navLink('UsuarioController.php', $page) ?>">
             <i class="fas fa-user-shield"></i><span>Usuarios</span>
         </a>
-        <a href="/DisneyStock/views/dashboard/configuracion.php" class="<?= navLink('configuracion.php', $page) ?>">
+        <a href="/DisneyStock/controllers/ConfiguracionController.php" class="<?= navLink('ConfiguracionController.php', $page) ?>">
             <i class="fas fa-gear"></i><span>Configuración</span>
         </a>
         <?php endif; ?>
 
         <!-- Todos los roles -->
         <div class="nav-section">General</div>
-        <a href="/DisneyStock/views/dashboard/informacion.php" class="<?= navLink('informacion.php', $page) ?>">
+        <a href="/DisneyStock/controllers/InformacionController.php" class="<?= navLink('InformacionController.php', $page) ?>">
             <i class="fas fa-circle-info"></i><span>Información</span>
         </a>
 
     </nav>
 
-    <!-- Solo el boton de dark mode queda en el pie del sidebar -->
+    <!-- Pie del sidebar: nombre del usuario -->
     <div style="padding:12px; border-top:1px solid rgba(255,255,255,0.1);">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;">
+        <div style="display:flex;align-items:center;padding:10px 14px;">
             <div style="font-size:0.82rem; color:rgba(255,255,255,0.7); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                 <i class="fas fa-circle-user" style="margin-right:8px; color:#A78BFA;"></i>
                 <?= htmlspecialchars($nombre) ?>
             </div>
-            <button id="darkToggle" onclick="toggleDark()">
-                <i id="darkIcon" class="fas fa-moon"></i>
-            </button>
         </div>
     </div>
 </aside>
