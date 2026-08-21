@@ -2,6 +2,10 @@
 session_start();
 $alert = $_SESSION['alert'] ?? null;
 unset($_SESSION['alert']);
+
+// Leer cookie "recordar usuario" para pre-rellenar el campo
+$usuarioRecordado = $_COOKIE['ds_remember_user'] ?? '';
+$checkboxMarcado  = $usuarioRecordado !== '';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -68,6 +72,7 @@ unset($_SESSION['alert']);
                                 id="usuario"
                                 name="usuario"
                                 placeholder="Tu nombre de usuario"
+                                value="<?= htmlspecialchars($usuarioRecordado) ?>"
                                 required
                                 autocomplete="username"
                             >
@@ -91,6 +96,19 @@ unset($_SESSION['alert']);
                                 <i class="fas fa-eye" id="eyeIcon"></i>
                             </button>
                         </div>
+                    </div>
+
+                    <!-- Recordar usuario -->
+                    <div class="form-group remember-row">
+                        <label class="remember-label">
+                            <input
+                                type="checkbox"
+                                name="recordar"
+                                value="1"
+                                <?= $checkboxMarcado ? 'checked' : '' ?>
+                            >
+                            Recordar usuario
+                        </label>
                     </div>
 
                     <!-- Botón ingresar -->

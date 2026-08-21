@@ -69,6 +69,25 @@ class AuthController
             'requiere_cambio_contrasenia' => (bool)($user['requiere_cambio_contrasenia'] ?? false),
         ];
 
+        // ── Cookie "Recordar usuario" ──────────────────────────────
+        // Si el usuario marcó el checkbox, guardamos solo el nombre de usuario
+        // en una cookie por 30 días. Nunca guardamos la contraseña.
+        if (!empty($_POST['recordar'])) {
+            setcookie(
+                'ds_remember_user',
+                $user['usuario'],
+                [
+                    'expires'  => time() + (30 * 24 * 60 * 60), // 30 días
+                    'path'     => '/',
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]
+            );
+        } else {
+            // Si no marcó el checkbox, borrar la cookie si existía
+            setcookie('ds_remember_user', '', ['expires' => time() - 3600, 'path' => '/']);
+        }
+
         // Los empleados van directo a ventas, los admin al dashboard
         $destino = $user['rol'] === 'empleado'
             ? '/DisneyStock/controllers/VentaController.php'
@@ -83,6 +102,10 @@ class AuthController
         // Limpiar todas las variables de sesión y destruirla
         session_unset();
         session_destroy();
+
+        // Borrar la cookie de "recordar usuario" si existe
+        setcookie('ds_remember_user', '', ['expires' => time() - 3600, 'path' => '/']);
+
         header("Location: " . URL_LOGIN);
         exit;
     }
