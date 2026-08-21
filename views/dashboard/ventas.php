@@ -84,7 +84,7 @@ require_once __DIR__ . '/../../helpers/auth.php';
                     <?= $v['estado'] ?>
                 </span>
             </td>
-            <td style="padding:12px 16px;color:#6B7280;font-size:0.82rem;"><?= date('d/m/Y H:i', strtotime($v['fecha_venta'])) ?></td>
+            <td style="padding:12px 16px;color:#6B7280;font-size:0.82rem;"><?= date('d/m/Y', strtotime($v['fecha_venta'])) ?></td>
             <td style="padding:12px 16px;text-align:center;">
                 <button onclick="verDetalle('<?= $v['id_venta'] ?>')" style="background:#EDE9FE;color:#4A1D96;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-weight:600;">
                     <i class="fas fa-eye"></i>

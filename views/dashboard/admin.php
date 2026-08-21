@@ -161,7 +161,7 @@ function fmt(float $n): string {
                             <?= htmlspecialchars($v['estado']) ?>
                         </span>
                     </td>
-                    <td style="padding:12px; color:#6B7280; font-size:0.82rem;"><?= date('d/m/Y H:i', strtotime($v['fecha_venta'])) ?></td>
+                    <td style="padding:12px; color:#6B7280; font-size:0.82rem;"><?= date('d/m/Y', strtotime($v['fecha_venta'])) ?></td>
                 </tr>
                 <?php endforeach; ?>
                 </tbody>
