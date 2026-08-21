@@ -1,24 +1,19 @@
 ﻿<?php
-session_start();
-if (!isset($_SESSION['usuario'])) { header("Location: /DisneyStock/views/usuarios/login.php"); exit; }
+// ============================================================
+//  DisneyStock — Vista: Información del Sistema
+//  Archivo: views/dashboard/informacion.php
+//
+//  NO accede a la BD ni verifica sesión directamente.
+//  Las variables $cfg, $rol y $nombre las prepara
+//  InformacionController.php antes de incluir esta vista.
+// ============================================================
+if (!isset($cfg)) {
+    header("Location: /DisneyStock/controllers/InformacionController.php");
+    exit;
+}
 
-// Solo empleado y admin pueden ver esta pantalla
 $rol    = $_SESSION['usuario']['rol'];
 $nombre = $_SESSION['usuario']['nombre'];
-
-// Configuración guardada (con defaults)
-$cfg = $_SESSION['config'] ?? [];
-$defaults = [
-    'nombre_negocio'      => 'Variedades Disney',
-    'descripcion_negocio' => 'Tienda de accesorios, manillas y ropa',
-    'telefono_negocio'    => '',
-    'direccion_negocio'   => 'Huila, Colombia',
-];
-$cfg = array_merge($defaults, $cfg);
-
-$titulo = "Información del Sistema";
-require_once __DIR__ . '/../Layouts/header.php';
-require_once __DIR__ . '/../Layouts/sidebar.php';
 ?>
 
 <!-- Encabezado -->
@@ -171,5 +166,3 @@ require_once __DIR__ . '/../Layouts/sidebar.php';
     </div>
 
 </div>
-
-<?php require_once __DIR__ . '/../Layouts/footer.php'; ?>

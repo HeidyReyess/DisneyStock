@@ -666,7 +666,7 @@ DisneyStock está organizado en **módulos funcionales**. Cada módulo agrupa un
 | **Reportes** | `ReporteController.php` | Venta, Producto, Inventario | `views/dashboard/reportes.php` |
 | **Usuarios** | `UsuarioController.php` | `Usuario.php` | `views/dashboard/usuarios.php` |
 | **Categorias** | `CategoriaController.php` | `Categoria.php` | *(modal dentro de productos)* |
-| **Configuracion** | — *(vista directa)* | — | `views/dashboard/configuracion.php` |
+| **Configuracion** | `ConfiguracionController.php` | — | `views/dashboard/configuracion.php` |
 
 ### Estructura completa de carpetas
 

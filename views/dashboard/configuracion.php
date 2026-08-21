@@ -1,52 +1,24 @@
 ﻿<?php
-session_start();
-if (!isset($_SESSION['usuario'])) { header("Location: /DisneyStock/views/usuarios/login.php"); exit; }
-if ($_SESSION['usuario']['rol'] !== 'admin') { header("Location: /DisneyStock/controllers/DashboardController.php"); exit; }
-
-// Procesar guardado de configuración
-$guardado = false;
-$seccion  = $_GET['seccion'] ?? 'notificaciones';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Persistir en sesión (en un sistema real iría a BD)
-    foreach ($_POST as $k => $v) {
-        if ($k !== 'seccion') {
-            $_SESSION['config'][$k] = $v;
-        }
-    }
-    $seccion  = $_POST['seccion'] ?? $seccion;
-    $guardado = true;
+// ============================================================
+//  DisneyStock — Vista: Configuración del Sistema
+//  Archivo: views/dashboard/configuracion.php
+//
+//  NO accede a la BD ni verifica sesión directamente.
+//  Las variables $cfg, $seccion y $guardado las prepara
+//  ConfiguracionController.php antes de incluir esta vista.
+// ============================================================
+if (!isset($cfg)) {
+    header("Location: /DisneyStock/controllers/ConfiguracionController.php");
+    exit;
 }
-
-// Valores actuales (con defaults)
-$cfg = $_SESSION['config'] ?? [];
-$defaults = [
-    'alerta_stock_bajo'     => '1',
-    'umbral_stock'          => '5',
-    'notif_nueva_venta'     => '0',
-    'timeout_sesion'        => '60',
-    'intentos_login'        => '3',
-    'nombre_negocio'        => 'Variedades Disney',
-    'descripcion_negocio'   => 'Tienda de accesorios, manillas y ropa',
-    'telefono_negocio'      => '',
-    'direccion_negocio'     => 'Huila, Colombia',
-    'moneda'                => 'COP',
-    'formato_fecha'         => 'd/m/Y',
-    'version_sistema'       => '1.0.0',
-    'idioma'                => 'es',
-];
-$cfg = array_merge($defaults, $cfg);
-
-$titulo = "Configuración";
-require_once __DIR__ . '/../Layouts/header.php';
-require_once __DIR__ . '/../Layouts/sidebar.php';
+require_once __DIR__ . '/../../helpers/auth.php';
 
 $secciones = [
-    'notificaciones' => ['icon' => 'fa-bell',        'label' => 'Notificaciones'],
-    'seguridad'      => ['icon' => 'fa-shield-halved','label' => 'Seguridad'],
-    'aplicacion'     => ['icon' => 'fa-store',        'label' => 'Aplicación'],
-    'sistema'        => ['icon' => 'fa-gear',         'label' => 'Sistema'],
-    'idioma'         => ['icon' => 'fa-language',     'label' => 'Idioma'],
+    'notificaciones' => ['icon' => 'fa-bell',         'label' => 'Notificaciones'],
+    'seguridad'      => ['icon' => 'fa-shield-halved', 'label' => 'Seguridad'],
+    'aplicacion'     => ['icon' => 'fa-store',         'label' => 'Aplicación'],
+    'sistema'        => ['icon' => 'fa-gear',          'label' => 'Sistema'],
+    'idioma'         => ['icon' => 'fa-language',      'label' => 'Idioma'],
 ];
 ?>
 
@@ -85,8 +57,9 @@ $secciones = [
     <!-- Panel de contenido -->
     <div style="background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(74,29,150,0.07);border:1px solid #DDD6FE;padding:28px;">
 
-        <form method="POST">
+        <form method="POST" action="/DisneyStock/controllers/ConfiguracionController.php?seccion=<?= htmlspecialchars($seccion) ?>">
             <input type="hidden" name="seccion" value="<?= htmlspecialchars($seccion) ?>">
+            <?php csrfField(); ?>
 
             <?php if ($seccion === 'notificaciones'): ?>
             <!-- ── Notificaciones ── -->
@@ -306,5 +279,3 @@ $secciones = [
         </form>
     </div>
 </div>
-
-<?php require_once __DIR__ . '/../Layouts/footer.php'; ?>
