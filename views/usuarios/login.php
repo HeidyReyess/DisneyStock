@@ -22,7 +22,7 @@ $checkboxMarcado  = $usuarioRecordado !== '';
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- CSS de Login -->
-    <link rel="stylesheet" href="../../public/login.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="../../public/login.css?v=1.0.1">
 </head>
 <body>
 

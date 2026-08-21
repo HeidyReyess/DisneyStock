@@ -43,8 +43,8 @@ $rol    = $_SESSION['usuario']['rol'];
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- CSS del dashboard -->
-    <link rel="stylesheet" href="/DisneyStock/Styles/dashboard.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="/DisneyStock/Styles/sidebar.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/DisneyStock/Styles/dashboard.css?v=1.0.1">
+    <link rel="stylesheet" href="/DisneyStock/Styles/sidebar.css?v=1.0.1">
 
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
